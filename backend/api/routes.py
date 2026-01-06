@@ -190,8 +190,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         }
                     })
                     
-                    # Generate responses from mentioned agents
-                    for agent_name in routing_info["mentioned_agents"]:
+                    # Generate responses from agents that should be notified
+                    # (mentioned_agents if @ present, or Sarah if no @)
+                    agents_to_notify = routing_info.get("should_notify", routing_info["mentioned_agents"])
+                    
+                    for agent_name in agents_to_notify:
                         # Update agent status to thinking
                         await websocket.send_json({
                             "type": "agent_status",
