@@ -10,6 +10,7 @@ import asyncio
 from api.routes import router
 from orchestration.coordinator import AgentCoordinator
 from models.model_manager import ModelManager
+from tools.mcp_host import MCPHost
 
 app = FastAPI(
     title="DevSwarm Backend",
@@ -29,14 +30,21 @@ app.add_middleware(
 # Global instances
 model_manager: ModelManager = None
 coordinator: AgentCoordinator = None
+mcp_host: MCPHost = None
 
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize model and agent coordinator on startup"""
-    global model_manager, coordinator
+    global model_manager, coordinator, mcp_host
     
     print("🚀 Starting DevSwarm Backend...")
+    
+    # Initialize MCP Host first
+    print("🔧 Initializing MCP tools...")
+    mcp_host = MCPHost()
+    await mcp_host.initialize()
+    
     print("📦 Loading Phi-4-multimodal model...")
     
     # Initialize model manager (singleton)
@@ -44,7 +52,7 @@ async def startup_event():
     await model_manager.initialize()
     
     # Initialize agent coordinator
-    coordinator = AgentCoordinator(model_manager)
+    coordinator = AgentCoordinator(model_manager, mcp_host)
     await coordinator.initialize()
     
     print("✅ DevSwarm Backend ready!")
@@ -53,12 +61,15 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    global model_manager, coordinator
+    global model_manager, coordinator, mcp_host
     
     print("🛑 Shutting down DevSwarm Backend...")
     
     if coordinator:
         await coordinator.shutdown()
+    
+    if mcp_host:
+        await mcp_host.shutdown()
     
     if model_manager:
         await model_manager.shutdown()

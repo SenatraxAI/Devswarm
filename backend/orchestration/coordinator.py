@@ -23,8 +23,9 @@ class AgentCoordinator:
         "Oliver Hansen (Coordinator)"
     ]
     
-    def __init__(self, model_manager):
+    def __init__(self, model_manager, mcp_host):
         self.model_manager = model_manager
+        self.mcp_host = mcp_host
         self.agents = {}
         self.is_ready = False
     
