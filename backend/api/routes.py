@@ -220,6 +220,60 @@ async def websocket_endpoint(websocket: WebSocket):
                                     }
                                 })
                                 
+                                # Check if agent @mentioned other agents in response
+                                from orchestration.mention_parser import MentionParser
+                                parser = MentionParser()
+                                follow_up_mentions = parser.extract_mentions(response)
+                                
+                                if follow_up_mentions:
+                                    # Agent is calling other agents!
+                                    print(f"🔗 {agent_name} mentioned: {follow_up_mentions}")
+                                    
+                                    # Trigger responses from mentioned agents
+                                    for mentioned_agent in follow_up_mentions:
+                                        if mentioned_agent in coordinator.agents:
+                                            await websocket.send_json({
+                                                "type": "agent_status",
+                                                "data": {
+                                                    "agent": mentioned_agent,
+                                                    "status": "thinking",
+                                                    "message": f"Responding to {agent_name}..."
+                                                }
+                                            })
+                                            
+                                            # Get the mentioned agent
+                                            follow_up_agent = coordinator.agents[mentioned_agent]
+                                            
+                                            # Build context: "AGENT: Sarah mentioned you: {response}"
+                                            follow_up_message = f"🔗 {agent_name} mentioned you: {response}"
+                                            
+                                            try:
+                                                follow_up_response = await follow_up_agent.process_message(
+                                                    follow_up_message, 
+                                                    websocket
+                                                )
+                                                
+                                                await websocket.send_json({
+                                                    "type": "agent_message",
+                                                    "data": {
+                                                        "agent": mentioned_agent,
+                                                        "message": follow_up_response,
+                                                        "messageType": "agent",
+                                                        "timestamp": data.get("timestamp", 0) + 2000
+                                                    }
+                                                })
+                                                
+                                                await websocket.send_json({
+                                                    "type": "agent_status",
+                                                    "data": {
+                                                        "agent": mentioned_agent,
+                                                        "status": "idle",
+                                                        "message": ""
+                                                    }
+                                                })
+                                            except Exception as e:
+                                                print(f"❌ Error in follow-up from {mentioned_agent}: {e}")
+                                
                                 # Update status to idle
                                 await websocket.send_json({
                                     "type": "agent_status",
