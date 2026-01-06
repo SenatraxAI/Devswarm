@@ -1,0 +1,43 @@
+{
+  "name": "devswarm",
+  "version": "0.1.0",
+  "description": "DevSwarm - 8 AI agents building software autonomously",
+  "main": "frontend/electron/main.js",
+  "author": "DevSwarm Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "python backend/main.py",
+    "build": "cd frontend && npm run build",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.devswarm.app",
+    "productName": "DevSwarm",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "frontend/out/**/*",
+      "frontend/electron/**/*",
+      "backend/**/*",
+      "models/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
