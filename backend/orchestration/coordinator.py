@@ -33,12 +33,41 @@ class AgentCoordinator:
         """Initialize all 8 agent sessions"""
         print("🤖 Initializing agent team...")
         
-        for agent_name in self.AGENT_NAMES:
-            self.agents[agent_name] = {
-                "status": "idle",
-                "session": [],
-                "personality": self._get_personality(agent_name)
-            }
+        # Import all personas
+        from agents.personas.sarah_chen import SARAH_CHEN_SYSTEM_PROMPT
+        from agents.personas.marcus_williams import MARCUS_WILLIAMS_SYSTEM_PROMPT
+        from agents.personas.elena_rodriguez import ELENA_RODRIGUEZ_SYSTEM_PROMPT
+        from agents.personas.james_okonkwo import JAMES_OKONKWO_SYSTEM_PROMPT
+        from agents.personas.priya_sharma import PRIYA_SHARMA_SYSTEM_PROMPT
+        from agents.personas.david_kim import DAVID_KIM_SYSTEM_PROMPT
+        from agents.personas.aisha_patel import AISHA_PATEL_SYSTEM_PROMPT
+        from agents.personas.oliver_hansen import OLIVER_HANSEN_SYSTEM_PROMPT
+        
+        # Create agent instances
+        from agents.agent_base import Agent
+        
+        persona_configs = [
+            ("sarah_chen", "Sarah Chen", "PM", SARAH_CHEN_SYSTEM_PROMPT),
+            ("marcus_williams", "Marcus Williams", "Architect", MARCUS_WILLIAMS_SYSTEM_PROMPT),
+            ("elena_rodriguez", "Elena Rodriguez", "Frontend", ELENA_RODRIGUEZ_SYSTEM_PROMPT),
+            ("james_okonkwo", "James Okonkwo", "Backend", JAMES_OKONKWO_SYSTEM_PROMPT),
+            ("priya_sharma", "Priya Sharma", "DevOps", PRIYA_SHARMA_SYSTEM_PROMPT),
+            ("david_kim", "David Kim", "Security", DAVID_KIM_SYSTEM_PROMPT),
+            ("aisha_patel", "Aisha Patel", "QA", AISHA_PATEL_SYSTEM_PROMPT),
+            ("oliver_hansen", "Oliver Hansen", "Coordinator", OLIVER_HANSEN_SYSTEM_PROMPT),
+        ]
+        
+        for agent_id, name, role, system_prompt in persona_configs:
+            agent = Agent(
+                agent_id=agent_id,
+                name=name,
+                role=role,
+                system_prompt=system_prompt,
+                model_manager=self.model_manager,
+                mcp_host=self.mcp_host
+            )
+            self.agents[name] = agent
+            print(f"  ✓ {name} ({role}) ready")
         
         self.is_ready = True
         print(f"✅ {len(self.agents)} agents ready")

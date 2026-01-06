@@ -1,21 +1,11 @@
+# Minimal requirements for Phase 1 testing
+# Full model dependencies will be added in Phase 1.4
+
 # Core dependencies
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-socketio==5.11.1
 pydantic==2.5.3
-
-# Model inference
-llama-cpp-python==0.2.55
-huggingface-hub==0.20.3
-
-# Memory and storage
-faiss-cpu==1.7.4
-sentence-transformers==2.3.1
-chromadb==0.4.22
-
-# MCP integration
-mcp==0.1.0
-anthropic-mcp==0.1.0
 
 # Tools and utilities
 pydantic-settings==2.1.0
@@ -25,10 +15,16 @@ aiofiles==23.2.1
 
 # Monitoring
 psutil==5.9.8
-nvidia-ml-py3==7.352.0
 
 # Development
 pytest==7.4.4
 pytest-asyncio==0.23.3
-black==24.1.1
-ruff==0.1.15
+
+# NOTE: Heavy dependencies commented out for Phase 1
+# These will be needed in Phase 1.4 when we implement real model inference:
+# llama-cpp-python==0.2.55
+# huggingface-hub==0.20.3
+# faiss-cpu>=1.9.0
+# sentence-transformers>=2.3.1
+# chromadb>=0.4.22
+# nvidia-ml-py3==7.352.0
