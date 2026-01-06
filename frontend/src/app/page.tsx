@@ -1,97 +1,131 @@
 'use client';
 
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { ChatInput } from '@/components/ChatInput';
 
 export default function Home() {
-    const { isConnected, agents, messages, terminalOutput } = useWebSocket();
+    const { isConnected, agents, messages, terminalOutput, sendMessage } = useWebSocket();
+
+    const handleSendMessage = (message: string) => {
+        sendMessage({
+            type: 'user_message',
+            message: message,
+            timestamp: Date.now()
+        });
+    };
 
     return (
-        <main className="h-screen flex flex-col">
+        <div className="flex h-screen flex-col bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20">
             {/* Header */}
-            <header className="bg-surface border-b border-surface-light px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">
-                        DevSwarm
-                    </h1>
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-agent-success' : 'bg-agent-error'} animate-pulse-slow`} />
-                            <span className="text-sm text-gray-400">
-                                {isConnected ? 'Connected' : 'Disconnected'}
-                            </span>
-                        </div>
-                        <div className="text-sm text-gray-400">
-                            {agents.length} agents ready
-                        </div>
+            <header className="flex items-center justify-between border-b border-gray-700/50 bg-gray-900/80 px-6 py-4 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                    DevSwarm
+                </h1>
+
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
+                        <span className="text-sm text-gray-400">
+                            {isConnected ? 'Connected' : 'Disconnected'}
+                        </span>
+                    </div>
+
+                    <div className="text-sm text-gray-400">
+                        {agents.length} agents ready
                     </div>
                 </div>
             </header>
 
-            {/* Three-panel layout */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Left Panel: Agent Team */}
-                <div className="w-80 bg-surface border-r border-surface-light p-4 overflow-y-auto">
-                    <h2 className="text-lg font-semibold mb-4">Agent Team</h2>
-                    <div className="space-y-3">
+            {/* Main Content */}
+            <div className="flex flex-1 overflow-hidden">
+                {/* Left Panel - Agent Team */}
+                <div className="w-80 border-r border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+                    <div className="border-b border-gray-700/50 p-4">
+                        <h2 className="text-lg font-semibold text-cyan-400">Agent Team</h2>
+                    </div>
+
+                    <div className="space-y-2 overflow-y-auto p-4" style={{ height: 'calc(100vh - 180px)' }}>
                         {agents.map((agent) => (
                             <div
                                 key={agent.name}
-                                className={`bg-background rounded-lg p-4 border border-surface-light transition-all ${agent.status === 'thinking' ? 'glow-thinking' :
-                                        agent.status === 'speaking' ? 'glow-speaking' :
-                                            agent.status === 'error' ? 'glow-error' : ''
+                                className={`agent-card rounded-lg border p-3 transition-all ${agent.status === 'thinking'
+                                        ? 'border-yellow-500/50 bg-yellow-500/10'
+                                        : agent.status === 'speaking'
+                                            ? 'border-green-500/50 bg-green-500/10'
+                                            : agent.status === 'error'
+                                                ? 'border-red-500/50 bg-red-500/10'
+                                                : 'border-gray-700/50 bg-gray-800/50'
                                     }`}
                             >
-                                <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <h3 className="font-semibold text-sm">{agent.name}</h3>
-                                        <p className="text-xs text-gray-400">{agent.role}</p>
+                                        <h3 className="font-medium text-gray-200">{agent.name}</h3>
+                                        <p className="text-sm text-gray-400">{agent.role}</p>
                                     </div>
-                                    <div className={`w-3 h-3 rounded-full agent-status-${agent.status}`} />
+
+                                    <div className={`agent-status-${agent.status} h-3 w-3 rounded-full`} />
                                 </div>
+
                                 {agent.message && (
-                                    <p className="text-xs text-gray-300 mt-2">{agent.message}</p>
+                                    <p className="mt-2 text-xs text-gray-500">{agent.message}</p>
                                 )}
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Center Panel: Workspace */}
-                <div className="flex-1 bg-background p-6 overflow-y-auto">
-                    <h2 className="text-lg font-semibold mb-4">Live Chat</h2>
-                    <div className="space-y-4">
+                {/* Center Panel - Live Chat */}
+                <div className="flex flex-1 flex-col bg-gray-900/30">
+                    <div className="border-b border-gray-700/50 p-4">
+                        <h2 className="text-lg font-semibold text-cyan-400">Live Chat</h2>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4">
                         {messages.length === 0 ? (
-                            <div className="text-center text-gray-500 mt-12">
-                                <p>No messages yet</p>
-                                <p className="text-sm mt-2">Agents will appear here when they start working</p>
+                            <div className="flex h-full items-center justify-center text-gray-500">
+                                <p className="text-center">
+                                    No messages yet<br />
+                                    <span className="text-sm">Type a message below to start chatting with agents</span>
+                                </p>
                             </div>
                         ) : (
-                            messages.map((msg, idx) => (
-                                <div key={idx} className="bg-surface rounded-lg p-4 border border-surface-light">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="font-semibold text-sm">{msg.agent}</span>
-                                        <span className="text-xs text-gray-500">
-                                            {new Date(msg.timestamp * 1000).toLocaleTimeString()}
-                                        </span>
+                            <div className="space-y-4">
+                                {messages.map((msg, i) => (
+                                    <div
+                                        key={i}
+                                        className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-3"
+                                    >
+                                        <div className="mb-1 flex items-center gap-2">
+                                            <span className="font-medium text-cyan-400">{msg.agent}</span>
+                                            <span className="text-xs text-gray-500">
+                                                {new Date(msg.timestamp).toLocaleTimeString()}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-300 whitespace-pre-wrap">{msg.message}</p>
                                     </div>
-                                    <p className="text-sm text-gray-300">{msg.message}</p>
-                                </div>
-                            ))
+                                ))}
+                            </div>
                         )}
                     </div>
+
+                    {/* Chat Input */}
+                    <ChatInput onSendMessage={handleSendMessage} disabled={!isConnected} />
                 </div>
 
-                {/* Right Panel: Terminal */}
-                <div className="w-96 bg-background border-l border-surface-light p-4 overflow-hidden flex flex-col">
-                    <h2 className="text-lg font-semibold mb-4">Terminal</h2>
-                    <div className="flex-1 terminal overflow-y-auto font-mono text-xs">
+                {/* Right Panel - Terminal */}
+                <div className="w-96 border-l border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+                    <div className="border-b border-gray-700/50 p-4">
+                        <h2 className="text-lg font-semibold text-cyan-400">Terminal</h2>
+                    </div>
+
+                    <div className="overflow-y-auto p-4 font-mono text-sm" style={{ height: 'calc(100vh - 180px)' }}>
                         {terminalOutput.length === 0 ? (
-                            <div className="text-gray-500">Waiting for output...</div>
+                            <p className="text-gray-500">Waiting for output...</p>
                         ) : (
-                            terminalOutput.map((output, idx) => (
+                            terminalOutput.map((output, i) => (
                                 <div
-                                    key={idx}
-                                    className={output.streamType === 'stderr' ? 'text-terminal-red' : ''}
+                                    key={i}
+                                    className={output.streamType === 'stderr' ? 'text-red-400' : 'text-green-400'}
                                 >
                                     {output.line}
                                 </div>
@@ -100,6 +134,6 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
     );
 }
