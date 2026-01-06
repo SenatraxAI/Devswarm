@@ -179,7 +179,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "routing_strategy": routing_info["routing_strategy"]
                     })
                     
-                    #Broadcast user message to chat
+                    # Broadcast user message to chat
                     await websocket.send_json({
                         "type": "agent_message",
                         "data": {
@@ -190,17 +190,65 @@ async def websocket_endpoint(websocket: WebSocket):
                         }
                     })
                     
-                    # TODO: Trigger agent responses (Phase 2 - Phi-4 integration)
-                    # For now, send acknowledgment from mentioned agents
+                    # Generate responses from mentioned agents
                     for agent_name in routing_info["mentioned_agents"]:
+                        # Update agent status to thinking
                         await websocket.send_json({
                             "type": "agent_status",
                             "data": {
                                 "agent": agent_name,
                                 "status": "thinking",
-                                "message": f"Processing your message..."
+                                "message": "Processing your message..."
                             }
                         })
+                        
+                        # Get agent and generate response
+                        agent = coordinator.agents.get(agent_name)
+                        if agent:
+                            try:
+                                # Process message with streaming
+                                response = await agent.process_message(message_text, websocket)
+                                
+                                # Send complete response
+                                await websocket.send_json({
+                                    "type": "agent_message",
+                                    "data": {
+                                        "agent": agent_name,
+                                        "message": response,
+                                        "messageType": "agent",
+                                        "timestamp": data.get("timestamp", 0) + 1000
+                                    }
+                                })
+                                
+                                # Update status to idle
+                                await websocket.send_json({
+                                    "type": "agent_status",
+                                    "data": {
+                                        "agent": agent_name,
+                                        "status": "idle",
+                                        "message": ""
+                                    }
+                                })
+                            except Exception as e:
+                                # Send error
+                                await websocket.send_json({
+                                    "type": "agent_message",
+                                    "data": {
+                                        "agent": agent_name,
+                                        "message": f"❌ Error: {str(e)}",
+                                        "messageType": "error",
+                                        "timestamp": data.get("timestamp", 0) + 1000
+                                    }
+                                })
+                                
+                                await websocket.send_json({
+                                    "type": "agent_status",
+                                    "data": {
+                                        "agent": agent_name,
+                                        "status": "error",
+                                        "message": str(e)
+                                    }
+                                })
             else:
                 # Echo back for unknown types
                 await websocket.send_json({

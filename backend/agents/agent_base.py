@@ -77,12 +77,13 @@ class Agent:
         # Add system prompt as first message
         self.session.add_message("system", system_prompt)
     
-    async def process_message(self, user_message: str) -> str:
+    async def process_message(self, user_message: str, websocket=None) -> str:
         """
         Process a user message and generate response
         
         Args:
             user_message: Message from user or another agent
+            websocket: Optional WebSocket for streaming responses
             
         Returns:
             Agent's response
@@ -98,17 +99,39 @@ class Agent:
         
         # Generate response using model
         try:
-            response = await self.model_manager.generate(
+            response_parts = []
+            
+            # Stream tokens from model
+            async for token in self.model_manager.generate(
                 prompt=prompt,
+                system_prompt=self.system_prompt,
                 temperature=0.7,
-                max_tokens=512
-            )
+                max_tokens=1000,
+                stream=True
+            ):
+                response_parts.append(token)
+                
+                # Stream to WebSocket if available
+                if websocket:
+                    try:
+                        await websocket.send_json({
+                            "type": "agent_token",
+                            "data": {
+                                "agent": self.name,
+                                "token": token
+                            }
+                        })
+                    except:
+                        pass  # WebSocket might be closed
+            
+            # Combine all tokens
+            full_response = "".join(response_parts)
             
             # Add response to session
-            self.session.add_message("assistant", response)
+            self.session.add_message("assistant", full_response)
             self.session.status = "speaking"
             
-            return response
+            return full_response
             
         except Exception as e:
             self.session.status = "error"

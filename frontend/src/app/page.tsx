@@ -6,12 +6,20 @@ import { ChatInput } from '@/components/ChatInput';
 export default function Home() {
     const { isConnected, agents, messages, terminalOutput, sendMessage } = useWebSocket();
 
-    const handleSendMessage = (message: string) => {
-        sendMessage({
+    const handleSendMessage = (message: string, files?: File[]) => {
+        const payload: any = {
             type: 'user_message',
             message: message,
             timestamp: Date.now()
-        });
+        };
+
+        // TODO: Handle file uploads (convert to base64 for images, upload for others)
+        if (files && files.length > 0) {
+            payload.files = files.map(f => ({ name: f.name, type: f.type, size: f.size }));
+            console.log('📎 Files attached:', files);
+        }
+
+        sendMessage(payload);
     };
 
     return (
@@ -49,12 +57,12 @@ export default function Home() {
                             <div
                                 key={agent.name}
                                 className={`agent-card rounded-lg border p-3 transition-all ${agent.status === 'thinking'
-                                        ? 'border-yellow-500/50 bg-yellow-500/10'
-                                        : agent.status === 'speaking'
-                                            ? 'border-green-500/50 bg-green-500/10'
-                                            : agent.status === 'error'
-                                                ? 'border-red-500/50 bg-red-500/10'
-                                                : 'border-gray-700/50 bg-gray-800/50'
+                                    ? 'border-yellow-500/50 bg-yellow-500/10'
+                                    : agent.status === 'speaking'
+                                        ? 'border-green-500/50 bg-green-500/10'
+                                        : agent.status === 'error'
+                                            ? 'border-red-500/50 bg-red-500/10'
+                                            : 'border-gray-700/50 bg-gray-800/50'
                                     }`}
                             >
                                 <div className="flex items-center justify-between">
