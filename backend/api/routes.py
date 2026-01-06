@@ -14,6 +14,12 @@ class UserRequest(BaseModel):
     context: Dict = {}
 
 
+class ChatMessage(BaseModel):
+    """Chat message from user"""
+    message: str
+    timestamp: int
+
+
 class AgentResponse(BaseModel):
     """Agent response model"""
     agent: str
@@ -104,6 +110,30 @@ async def execute_tool(request: ToolExecutionRequest):
     return result
 
 
+@router.post("/chat")
+async def process_chat(message: ChatMessage):
+    """
+    Process a chat message from user with @mention support
+    
+    Returns routing info and triggers agent processing
+    """
+    from main import coordinator
+    
+    if not coordinator or not coordinator.is_ready:
+        raise HTTPException(status_code=503, detail="Agent coordinator not ready")
+    
+    # Process message with @mention routing
+    routing_info = await coordinator.process_user_message(message.message)
+    
+    return {
+        "status": "processing",
+        "message": message.message,
+        "mentioned_agents": routing_info["mentioned_agents"],
+        "routing_strategy": routing_info["routing_strategy"],
+        "timestamp": message.timestamp
+    }
+
+
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time communication"""
@@ -133,11 +163,51 @@ async def websocket_endpoint(websocket: WebSocket):
             # Receive messages from client
             data = await websocket.receive_json()
             
-            # Echo back for now (TODO: process through coordinator)
-            await websocket.send_json({
-                "type": "response",
-                "data": data
-            })
+            # Handle different message types
+            if data.get("type") == "user_message":
+                # Process the user message
+                message_text = data.get("message", "")
+                
+                # Route message to agents
+                if coordinator and coordinator.is_ready:
+                    routing_info = await coordinator.process_user_message(message_text)
+                    
+                    # Send routing confirmation back
+                    await websocket.send_json({
+                        "type": "message_routed",
+                        "mentioned_agents": routing_info["mentioned_agents"],
+                        "routing_strategy": routing_info["routing_strategy"]
+                    })
+                    
+                    #Broadcast user message to chat
+                    await websocket.send_json({
+                        "type": "agent_message",
+                        "data": {
+                            "agent": "You",
+                            "message": message_text,
+                            "messageType": "user",
+                            "timestamp": data.get("timestamp", 0)
+                        }
+                    })
+                    
+                    # TODO: Trigger agent responses (Phase 2 - Phi-4 integration)
+                    # For now, send acknowledgment from mentioned agents
+                    for agent_name in routing_info["mentioned_agents"]:
+                        await websocket.send_json({
+                            "type": "agent_status",
+                            "data": {
+                                "agent": agent_name,
+                                "status": "thinking",
+                                "message": f"Processing your message..."
+                            }
+                        })
+            else:
+                # Echo back for unknown types
+                await websocket.send_json({
+                    "type": "response",
+                    "data": data
+                })
             
     except WebSocketDisconnect:
         print("Client disconnected from WebSocket")
+
