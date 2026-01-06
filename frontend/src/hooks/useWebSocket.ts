@@ -1,7 +1,7 @@
-"""
-WebSocket client hook for React frontend
-Manages connection, reconnection, and event handling
-"""
+/**
+ * WebSocket client hook for React frontend
+ * Manages connection, reconnection, and event handling
+ */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 

@@ -107,14 +107,26 @@ async def execute_tool(request: ToolExecutionRequest):
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time communication"""
+    from main import coordinator
+    
     await websocket.accept()
     
     try:
-        # Send initial connection message
+        # Send initial connection message with agent data
+        agent_data = []
+        if coordinator and coordinator.is_ready:
+            for name, agent in coordinator.agents.items():
+                agent_data.append({
+                    "name": name,
+                    "role": agent.role,
+                    "status": agent.session.status
+                })
+        
         await websocket.send_json({
             "type": "connection",
             "status": "connected",
-            "message": "DevSwarm backend connected"
+            "message": "DevSwarm backend connected",
+            "agents": agent_data
         })
         
         while True:

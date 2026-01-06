@@ -69,8 +69,36 @@ class AgentCoordinator:
             self.agents[name] = agent
             print(f"  ✓ {name} ({role}) ready")
         
+        # Initialize message router
+        from orchestration.message_router import MessageRouter
+        self.message_router = MessageRouter(self)
+        
         self.is_ready = True
         print(f"✅ {len(self.agents)} agents ready")
+    
+    async def process_user_message(self, message: str) -> Dict:
+        """
+        Process a user message with @mention support
+        
+        Args:
+            message: User message, potentially with @mentions
+            
+        Returns:
+            Processing result with routing info
+        """
+        # Route message based on @mentions
+        routing_info = await self.message_router.route_message(message, sender="User")
+        
+        # Notify mentioned agents
+        if routing_info["should_notify"]:
+            responses = await self.message_router.notify_mentioned_agents(
+                message,
+                routing_info["mentioned_agents"],
+                sender="User"
+            )
+            routing_info["agent_responses"] = responses
+        
+        return routing_info
     
     async def shutdown(self):
         """Cleanup agent sessions"""
