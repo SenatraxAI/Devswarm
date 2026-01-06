@@ -144,17 +144,21 @@ class Agent:
             self.session.status = "idle"
     
     def _build_prompt(self) -> str:
-        """Build prompt from session messages"""
+        """Build prompt from session messages with clear role markers"""
         # Format messages for model
         prompt_parts = []
         
         for msg in self.session.get_recent_messages(20):
             if msg.role == "system":
-                prompt_parts.append(f"System: {msg.content}")
+                prompt_parts.append(f"SYSTEM INSTRUCTIONS: {msg.content}")
             elif msg.role == "user":
-                prompt_parts.append(f"User: {msg.content}")
+                # Mark USER messages clearly - this is the boss!
+                prompt_parts.append(f"👤 USER (Your Boss): {msg.content}")
             elif msg.role == "assistant":
                 prompt_parts.append(f"{self.name}: {msg.content}")
+        
+        # Add instruction about USER
+        prompt_parts.append("\nIMPORTANT: The USER is your boss. Respond to them professionally, clearly, and helpfully. They are directing this software project.")
         
         return "\n\n".join(prompt_parts)
     
