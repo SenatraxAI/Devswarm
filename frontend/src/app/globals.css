@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-jetbrains-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+  
+  body {
+    @apply bg-background text-white;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-surface;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-light rounded;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-agent-idle;
+  }
+}
+
+@layer components {
+  /* Agent status indicators */
+  .agent-status-idle {
+    @apply bg-agent-idle;
+  }
+  
+  .agent-status-thinking {
+    @apply bg-agent-thinking animate-pulse-slow;
+  }
+  
+  .agent-status-speaking {
+    @apply bg-agent-speaking;
+  }
+  
+  .agent-status-error {
+    @apply bg-agent-error;
+  }
+  
+  /* Terminal styling */
+  .terminal {
+    @apply font-mono text-sm bg-background text-terminal-green;
+  }
+  
+  /* Panel borders */
+  .panel-border {
+    @apply border border-surface-light;
+  }
+  
+  /* Glow effects */
+  .glow-thinking {
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.3);
+  }
+  
+  .glow-speaking {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+  }
+  
+  .glow-error {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+}
