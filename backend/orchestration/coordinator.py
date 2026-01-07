@@ -38,6 +38,17 @@ class AgentCoordinator:
         # Initialize team memory
         from orchestration.team_memory import TeamMemory
         self.team_memory = TeamMemory(self.event_log)
+        
+        # Initialize debate system (Phase 2.7)
+        from orchestration.debate_detector import DebateDetector
+        from orchestration.evidence_tracker import EvidenceTracker
+        from orchestration.autonomous_debate import AutonomousDebateManager
+        from orchestration.multi_angle_analyzer import MultiAngleAnalyzer
+        
+        self.debate_detector = DebateDetector()
+        self.evidence_tracker = EvidenceTracker()
+        self.debate_manager = AutonomousDebateManager()
+        self.angle_analyzer = MultiAngleAnalyzer()
     
     async def initialize(self):
         """Initialize all 8 agent sessions"""
@@ -95,6 +106,20 @@ class AgentCoordinator:
         """
         # Route message based on @mentions
         routing_info = await self.message_router.route_message(message, sender="User")
+        
+        # Check if this should trigger a debate (Phase 2.7)
+        debate_trigger = self.debate_detector.detect_debate_trigger(
+            message,
+            agent="User"
+        )
+        
+        if debate_trigger:
+            print(f"🗣️  Debate triggered: {debate_trigger['trigger'].value}")
+            print(f"   Topic: {debate_trigger['topic']}")
+            print(f"   Required perspectives: {debate_trigger['perspectives_needed']}")
+            
+            # Store debate info for agents to use
+            routing_info["debate_trigger"] = debate_trigger
         
         # Notify mentioned agents
         if routing_info["should_notify"]:
