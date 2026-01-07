@@ -166,6 +166,15 @@ class Agent:
         # Format messages for model
         prompt_parts = []
         
+        # Add team memory context if available
+        if self.event_log:
+            from orchestration.team_memory import TeamMemory
+            team_memory = TeamMemory(self.event_log)
+            shared_context = team_memory.get_shared_context(self.name, limit=10)
+            
+            if shared_context != "No shared context available.":
+                prompt_parts.append(f"TEAM CONTEXT:\n{shared_context}\n")
+        
         for msg in self.session.get_recent_messages(20):
             if msg.role == "system":
                 prompt_parts.append(f"SYSTEM INSTRUCTIONS: {msg.content}")

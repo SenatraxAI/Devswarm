@@ -34,6 +34,10 @@ class AgentCoordinator:
         
         # Initialize shared event log
         self.event_log = EventLog(project_id="default")
+        
+        # Initialize team memory
+        from orchestration.team_memory import TeamMemory
+        self.team_memory = TeamMemory(self.event_log)
     
     async def initialize(self):
         """Initialize all 8 agent sessions"""
