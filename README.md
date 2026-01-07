@@ -140,6 +140,58 @@ Complete audit trail of all agent actions and decisions
 - [Tool Ecosystem](docs/tools.md)
 - [Frontend Design](docs/design.md)
 
+## Configuration
+
+### Optional API Keys
+
+Create `backend/.env` file for optional tool features:
+
+```bash
+# Optional - Web research tool (2 of 22 tools)
+TAVILY_API_KEY=your_key_here
+
+# Optional - Dependency vulnerability scanning (2 of 22 tools)
+SNYK_TOKEN=your_token_here
+```
+
+**Note**: System works fully without these! 20 of 22 tools work immediately.
+
+### MCP Server Configuration
+
+Add any MCP server dynamically via `backend/mcp/mcp_servers.json`:
+
+```json
+{
+  "mcp_servers": {
+    "your_server_name": {
+      "enabled": true,
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@scope/mcp-server-package"],
+      "description": "Your server description",
+      "config": {
+        "api_key": "${YOUR_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+**Available MCP Servers**: [MCP Server Directory](https://github.com/modelcontextprotocol/servers)
+
+**How to add a new MCP server**:
+1. Edit `backend/mcp/mcp_servers.json`
+2. Add your server configuration
+3. Set `"enabled": true`
+4. Add any required API keys to `.env`
+5. Restart backend
+
+### Get API Keys (Optional)
+
+- **Tavily**: [tavily.com](https://tavily.com) (free tier available)
+- **Snyk**: [snyk.io](https://snyk.io) (free tier available)
+
 ## 🤝 Contributing
 
 This is an early-stage project. Contributions welcome!
