@@ -52,19 +52,23 @@ class Agent:
     All 8 DevSwarm agents inherit from this
     """
     
-    def __init__(self, name, system_prompt, model_manager, event_log=None, team_memory=None, mcp_host=None):
+    def __init__(self, agent_id, name, role, system_prompt, model_manager, event_log=None, team_memory=None, mcp_host=None):
         """
         Initialize an agent with MCP tool access
         
         Args:
+            agent_id: Unique identifier for the agent
             name: Agent name
+            role: Agent role (PM, Architect, etc.)
             system_prompt: Agent's system prompt
             model_manager: Model manager instance
             event_log: Shared event log
             team_memory: Team memory instance
             mcp_host: MCP Host for tool access
         """
+        self.id = agent_id
         self.name = name
+        self.role = role
         self.system_prompt = system_prompt
         self.model_manager = model_manager
         self.sessions = {}
@@ -77,25 +81,10 @@ class Agent:
             available_tools = self.mcp_host.get_available_tools(self.name)
             print(f"  {self.name}: {len(available_tools)} tools available")
         
-        # The original code had `self.event_log = event_log or EventLog()` here.
-        # Assuming the user wants to keep the default EventLog if not provided.
-        # Also, the original `__init__` had `agent_id` and `role` parameters.
-        # The provided snippet removes them but `AgentSession` still requires `agent_id`.
-        # To make the code syntactically correct and functional based on the provided snippet,
-        # I'll assume `agent_id` and `role` are now handled differently or derived,
-        # but for `AgentSession` initialization, a placeholder `agent_id` is needed.
-        # Given the instruction is to "add mcp_host parameter", and the snippet replaces the whole init,
-        # I will use the provided snippet as is, and address the `agent_id` for `AgentSession`
-        # by using `self.name` as a temporary `agent_id` if `agent_id` is no longer a parameter.
-        # This is a best effort to make the provided snippet work within the context.
-        
-        # Create session (assuming agent_id can be derived or is not strictly needed for this init)
-        # The original code had `agent_id` as a parameter. The new snippet removes it.
-        # For the sake of making the `AgentSession` initialization valid,
-        # we'll use `self.name` as `agent_id` for now, as `agent_id` is not passed to this new `__init__`.
+        # Create session
         self.session = AgentSession(
-            agent_id=self.name, # Placeholder, as agent_id parameter was removed in the snippet
-            agent_name=name,
+            agent_id=self.id,
+            agent_name=self.name,
             system_prompt=system_prompt
         )
         
