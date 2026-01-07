@@ -20,13 +20,6 @@ class MCPHost:
     """
     
     def __init__(self):
-        self.servers = {}           # Connected MCP servers {name: server}
-        self.tools = {}             # Unified tool registry {tool_name: (server, schema)}
-        self.access_control = {}    # Agent permissions {agent: [tool_names]}
-        self.is_initialized = False
-        
-    async def initialize(self):
-        """Initialize MCP host and connect to servers"""
         print("🔧 Initializing MCP Host...")
         
         # TODO: Load configuration

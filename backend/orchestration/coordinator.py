@@ -26,29 +26,38 @@ class AgentCoordinator:
         "Oliver Hansen (Coordinator)"
     ]
     
-    def __init__(self, model_manager, mcp_host):
+    def __init__(self, model_manager):
+        """Initialize the agent coordinator with MCP Host"""
         self.model_manager = model_manager
-        self.mcp_host = mcp_host
         self.agents = {}
         self.is_ready = False
         
         # Initialize shared event log
-        self.event_log = EventLog(project_id="default")
+        from storage import EventLog
+        self.event_log = EventLog()
         
         # Initialize team memory
         from orchestration.team_memory import TeamMemory
         self.team_memory = TeamMemory(self.event_log)
         
-        # Initialize debate system (Phase 2.7)
+        # Initialize MCP Host with all tools
+        from mcp.mcp_host import MCPHost
+        self.mcp_host = MCPHost()
+        
+        # Initialize debate system
         from orchestration.debate_detector import DebateDetector
         from orchestration.evidence_tracker import EvidenceTracker
-        from orchestration.autonomous_debate import AutonomousDebateManager
+        from orchestration.autonomous_debate import AutonomousDebate
         from orchestration.multi_angle_analyzer import MultiAngleAnalyzer
         
         self.debate_detector = DebateDetector()
         self.evidence_tracker = EvidenceTracker()
-        self.debate_manager = AutonomousDebateManager()
-        self.angle_analyzer = MultiAngleAnalyzer()
+        self.multi_angle_analyzer = MultiAngleAnalyzer()
+        self.autonomous_debate = AutonomousDebate(
+            self.debate_detector,
+            self.evidence_tracker,
+            self.multi_angle_analyzer
+        )
     
     async def initialize(self):
         """Initialize all 8 agent sessions"""
