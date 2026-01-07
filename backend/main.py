@@ -89,7 +89,73 @@ async def health():
 
 
 # Include API routes
+from api.event_routes import router as event_router
+from api.project_routes import router as project_router
 app.include_router(router, prefix="/api/v1")
+app.include_router(event_router, prefix="/api/v1")
+app.include_router(project_router, prefix="/api/v1")
+
+
+@app.websocket("/api/v1/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """Real-time agent communication via WebSocket"""
+    await websocket.accept()
+    
+    # Simple handshake to get project_id
+    project_id = "default"
+    
+    try:
+        # Send initial connection success
+        agents = coordinator.get_agents(project_id)
+        await websocket.send_json({
+            "type": "connection",
+            "status": "connected",
+            "project_id": project_id,
+            "agents": [a.get_status() for a in agents.values()]
+        })
+        
+        while True:
+            data = await websocket.receive_json()
+            
+            # Update project context if provided
+            if "project_id" in data:
+                project_id = data["project_id"]
+            
+            branch_name = data.get("branch_name", "main")
+            thread_id = data.get("thread_id")
+            msg_type = data.get("type")
+            
+            if msg_type == "user_message":
+                # Regular swarm message
+                message = data.get("message")
+                await coordinator.process_user_message(
+                    message, 
+                    project_id=project_id,
+                    branch_name=branch_name,
+                    thread_id=thread_id
+                )
+                
+            elif msg_type == "direct_message":
+                # Direct message to a specific agent
+                recipient = data.get("recipient")
+                message = data.get("message")
+                
+                agents = coordinator.get_agents(project_id)
+                if recipient in agents:
+                    # Trigger the specific agent to process the DM
+                    asyncio.create_task(
+                        agents[recipient].process_message(
+                            f"[DM] {message}", 
+                            websocket=websocket,
+                            branch_name=branch_name,
+                            thread_id=thread_id
+                        )
+                    )
+                    
+    except Exception as e:
+        print(f"❌ WebSocket error: {e}")
+    finally:
+        print("🔌 WebSocket closed")
 
 
 if __name__ == "__main__":

@@ -14,61 +14,51 @@ class AgentCoordinator:
     Coordinates the 8 DevSwarm agents, managing their sessions,
     communication, and collaborative workflows.
     """
-    
-    AGENT_NAMES = [
-        "Sarah Chen (PM)",
-        "Marcus Williams (Architect)",
-        "Elena Rodriguez (Frontend)",
-        "James Okonkwo (Backend)",
-        "Priya Sharma (DevOps)",
-        "David Kim (Security)",
-        "Aisha Patel (QA)",
-        "Oliver Hansen (Coordinator)"
-    ]
-    
     def __init__(self, model_manager):
-        """Initialize the agent coordinator with MCP Host"""
+        """Initialize the agent coordinator"""
         self.model_manager = model_manager
-        self.agents = {}
+        self.project_sessions = {} # project_id -> {agent_name: Agent}
         self.is_ready = False
         
-        # Initialize shared event log
-        from storage import EventLog
-        self.event_log = EventLog()
-        
-        # Initialize team memory
-        from orchestration.team_memory import TeamMemory
-        self.team_memory = TeamMemory(self.event_log)
-        
-        # Initialize MCP Host with all tools
+        # Initialize MCP Host (singleton for now, tools are passive)
         from mcp.mcp_host import MCPHost
         self.mcp_host = MCPHost()
         
-        # Initialize debate system
+        # Initialize debate detector & metadata (shared logic)
         from orchestration.debate_detector import DebateDetector
         from orchestration.evidence_tracker import EvidenceTracker
-        from orchestration.autonomous_debate import AutonomousDebate
         from orchestration.multi_angle_analyzer import MultiAngleAnalyzer
         
         self.debate_detector = DebateDetector()
         self.evidence_tracker = EvidenceTracker()
         self.multi_angle_analyzer = MultiAngleAnalyzer()
-        self.autonomous_debate = AutonomousDebate(
-            self.debate_detector,
-            self.evidence_tracker,
-            self.multi_angle_analyzer
-        )
-    
+
     async def initialize(self):
-        """Initialize all 8 agent sessions"""
-        print("🤖 Initializing agent team...")
+        """Initialize core coordinator services"""
+        # This is now a lightweight "ready" signal
+        self.is_ready = True
+        print("✅ Agent Coordinator service ready")
+
+    def get_agents(self, project_id: str = "default") -> Dict[str, Agent]:
+        """Get or create the agent team for a specific project"""
+        if project_id in self.project_sessions:
+            return self.project_sessions[project_id]
+        
+        print(f"🤖 Initializing agent team for project: {project_id}...")
+        
+        # Initialize project-specific event log
+        from storage import EventLog
+        event_log = EventLog(project_id=project_id)
+        
+        # Initialize team memory for this project
+        from orchestration.team_memory import TeamMemory
+        team_memory = TeamMemory(event_log)
         
         # Import all personas
         from agents.personas import sarah_chen, marcus_williams, elena_rodriguez
         from agents.personas import james_okonkwo, priya_sharma, david_kim
         from agents.personas import aisha_patel, oliver_hansen
         
-        # Create agent instances
         persona_configs = [
             ("sarah_chen", "Sarah Chen", "PM", sarah_chen),
             ("marcus_williams", "Marcus Williams", "Architect", marcus_williams),
@@ -80,10 +70,9 @@ class AgentCoordinator:
             ("oliver_hansen", "Oliver Hansen", "Coordinator", oliver_hansen),
         ]
         
+        project_agents = {}
         for agent_id, name, role, persona_module in persona_configs:
-            # Get system prompt from module (each has {AGENT_ID}_SYSTEM_PROMPT)
             system_prompt = getattr(persona_module, f"{agent_id.upper()}_SYSTEM_PROMPT")
-            
             agent = Agent(
                 agent_id=agent_id,
                 name=name,
@@ -91,59 +80,61 @@ class AgentCoordinator:
                 system_prompt=system_prompt,
                 model_manager=self.model_manager,
                 mcp_host=self.mcp_host,
-                event_log=self.event_log  # Share event log
+                event_log=event_log,
+                team_memory=team_memory
             )
-            self.agents[name] = agent
-            print(f"  ✓ {name} ({role}) ready")
-        
-        # Initialize message router
-        from orchestration.message_router import MessageRouter
-        self.message_router = MessageRouter(self)
-        
-        self.is_ready = True
-        print(f"✅ {len(self.agents)} agents ready")
-    
-    async def process_user_message(self, message: str) -> Dict:
-        """
-        Process a user message with @mention support
-        
-        Args:
-            message: User message, potentially with @mentions
+            project_agents[name] = agent
             
-        Returns:
-            Processing result with routing info
-        """
-        # Route message based on @mentions
-        routing_info = await self.message_router.route_message(message, sender="User")
+        self.project_sessions[project_id] = project_agents
+        return project_agents
+
+    async def process_user_message(
+        self, 
+        message: str, 
+        project_id: str = "default", 
+        branch_name: str = "main",
+        thread_id: Optional[str] = None
+    ) -> Dict:
+        """Process a user message within a specific project and branch context"""
+        agents = self.get_agents(project_id)
         
-        # Check if this should trigger a debate (Phase 2.7)
-        debate_trigger = self.debate_detector.detect_debate_trigger(
-            message,
-            agent="User"
+        # Initialize project-specific router
+        from orchestration.message_router import MessageRouter
+        message_router = MessageRouter(self)
+        
+        # Route message based on @mentions
+        routing_info = await message_router.route_message(
+            message, 
+            sender="User", 
+            project_id=project_id,
+            branch_name=branch_name,
+            thread_id=thread_id
         )
         
+        # Check if this should trigger a debate
+        debate_trigger = self.debate_detector.detect_debate_trigger(message, agent="User")
+        
         if debate_trigger:
-            print(f"🗣️  Debate triggered: {debate_trigger['trigger'].value}")
-            print(f"   Topic: {debate_trigger['topic']}")
-            print(f"   Required perspectives: {debate_trigger['perspectives_needed']}")
-            
-            # Store debate info for agents to use
+            print(f"🗣️  Debate triggered: {debate_trigger['trigger'].value} on branch {branch_name}")
             routing_info["debate_trigger"] = debate_trigger
         
         # Notify mentioned agents
         if routing_info["should_notify"]:
-            responses = await self.message_router.notify_mentioned_agents(
+            responses = await message_router.notify_mentioned_agents(
                 message,
                 routing_info["mentioned_agents"],
-                sender="User"
+                sender="User",
+                project_id=project_id,
+                branch_name=branch_name,
+                thread_id=thread_id
             )
             routing_info["agent_responses"] = responses
         
         return routing_info
     
     async def shutdown(self):
-        """Cleanup agent sessions"""
-        self.agents.clear()
+        """Cleanup all project sessions"""
+        self.project_sessions.clear()
         self.is_ready = False
         print("🛑 Agent coordinator shut down")
     
@@ -176,13 +167,10 @@ class AgentCoordinator:
             "status": "processed"
         }
     
-    def get_agent_status(self) -> List[Dict]:
-        """Get status of all agents"""
+    def get_agent_status(self, project_id: str = "default") -> List[Dict]:
+        """Get status of all agents in a project"""
+        agents = self.get_agents(project_id)
         return [
-            {
-                "name": name,
-                "status": data["status"],
-                "role": data["personality"]["role"]
-            }
-            for name, data in self.agents.items()
+            agent.get_status()
+            for agent in agents.values()
         ]

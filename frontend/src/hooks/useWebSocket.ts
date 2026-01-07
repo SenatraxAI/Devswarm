@@ -88,8 +88,26 @@ export function useWebSocket(url: string = 'ws://localhost:8000/api/v1/ws'): Use
                         });
                         break;
 
+                    case 'agent_token':
+                        setAgents((prev) => {
+                            return prev.map(a =>
+                                a.name === data.data.agent
+                                    ? { ...a, status: 'speaking' as const, message: (a.message || '') + data.data.token }
+                                    : a
+                            );
+                        });
+                        break;
+
                     case 'agent_message':
                         setMessages((prev) => [...prev, data.data]);
+                        // Clear the streaming preview once full message arrives
+                        setAgents((prev) => {
+                            return prev.map(a =>
+                                a.name === data.data.agent
+                                    ? { ...a, status: 'idle' as const, message: '' }
+                                    : a
+                            );
+                        });
                         break;
 
                     case 'terminal_output':

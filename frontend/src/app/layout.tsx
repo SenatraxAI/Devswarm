@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     description: '8 AI agents building software autonomously',
 }
 
+import { Sidebar } from '@/components/Sidebar'
+
 export default function RootLayout({
     children,
 }: {
@@ -24,8 +26,11 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-            <body className="font-sans bg-background text-white antialiased">
-                {children}
+            <body className="font-sans bg-[#02040a] text-white antialiased flex">
+                <Sidebar />
+                <main className="flex-1 ml-16 md:ml-20 min-h-screen">
+                    {children}
+                </main>
             </body>
         </html>
     )

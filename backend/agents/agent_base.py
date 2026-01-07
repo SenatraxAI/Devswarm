@@ -75,6 +75,7 @@ class Agent:
         self.event_log = event_log
         self.team_memory = team_memory
         self.mcp_host = mcp_host
+        self.current_branch = "main" # Git-like branching support
         
         # Log available tools if mcp_host is provided
         if self.mcp_host:
@@ -91,17 +92,20 @@ class Agent:
         # Add system prompt as first message
         self.session.add_message("system", system_prompt)
     
-    async def process_message(self, user_message: str, websocket=None) -> str:
+    async def process_message(self, user_message: str, websocket=None, branch_name: str = "main", thread_id: Optional[str] = None) -> str:
         """
         Process a user message and generate response
         
         Args:
             user_message: Message from user or another agent
             websocket: Optional WebSocket for streaming responses
+            branch_name: Current exploration branch
+            thread_id: Optional message threading ID
             
         Returns:
             Agent's response
         """
+        self.current_branch = branch_name
         # Update status
         self.session.status = "thinking"
         
@@ -145,6 +149,23 @@ class Agent:
             self.session.add_message("assistant", full_response)
             self.session.status = "speaking"
             
+            # Send final message over WebSocket
+            if websocket:
+                try:
+                    await websocket.send_json({
+                        "type": "agent_message",
+                        "data": {
+                            "agent": self.name,
+                            "message": full_response,
+                            "messageType": "response",
+                            "branch_name": branch_name,
+                            "thread_id": thread_id,
+                            "timestamp": datetime.now().timestamp()
+                        }
+                    })
+                except:
+                    pass
+
             # Log event to event log
             if self.event_log:
                 self.event_log.append_event(
@@ -154,6 +175,8 @@ class Agent:
                         "message": full_response,
                         "in_response_to": user_message
                     },
+                    branch_name=branch_name,
+                    thread_id=thread_id,
                     metadata={
                         "tokens": len(response_parts),
                         "model": "gemma3:4b"

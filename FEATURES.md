@@ -1,7 +1,7 @@
 # DevSwarm - Implemented Features
 
 **Last Updated**: January 7, 2026  
-**Current Phase**: Phase 2.7 (Bickering Framework)
+**Current Phase**: Phase 4: Project Dashboard & Visualization (Complete ✅)
 
 ---
 
@@ -280,25 +280,65 @@ orchestration/
 
 ---
 
+## Phase 4: Project Dashboard & Visualization ✅ COMPLETE
+Establish the foundational architecture for managing complex, long-running development workflows across localized workspaces.
+
+### 4.1-4.3: Project Management & Dashboard
+- [x] **VS Code-style Homepage**: Entry point for all development with recent projects list.
+- [x] **Project Manager API**: CRUD operations for workspaces via `/api/v1/projects`.
+- [x] **Strict Physical Isolation**: Each project has its own directory, `events.jsonl`, and SQLite `index.db`.
+- [x] **System Stats**: Live VRAM and Agent Health widgets (Phase 4.1-4.3 complete).
+
+### 4.4-4.5: Git-like Branching & DMs
+- [x] **Memory Lineage**: Every event tracks multiple `parent_events` and `branch_name`.
+- [x] **Exploratory Branching**: Support for branching off any point in history.
+- [x] **Agent DMs**: Private, threaded conversations with specific agents.
+- [x] **WebSocket Routing**: Direct message propagation through the swarm.
+
+### 4.6: Timeline V3 (Interactive Graph)
+- [x] **High-Fidelity SVG Graph**: Visualizes the Git-commit graph of agent interactions.
+- [x] **Multi-lane Branching**: Render parallel branches with bezier curve connections.
+- [x] **Interactive Nodes**: Expandable cards for tool results and agent thoughts.
+- [x] **Project Filtering**: Independent project timelines accessible via `?p=project_id`.
+
+---
+
+## Architecture Highlights (Updated Phase 4)
+
+### Multi-Project Structure
+```
+data/projects/
+  {project_id}/
+    events.jsonl        # Source of truth (Isolated)
+    index.db            # SQLite search index (Isolated)
+    metadata.json       # Project stats & branch config
+```
+
+### Git-like Event Lineage
+```json
+{
+  "id": "uuid",
+  "branch_name": "feat/api-auth",
+  "parent_events": ["parent-uuid"],
+  "thread_id": "dm-sarah-123"
+}
+```
+
+---
+
 ## What's Next
 
-### Phase 2.7 Completion (Current)
-- Multi-angle analyzer
-- Agent integration
-- Testing scenarios
+### Phase 5: Advanced Intelligence (Upcoming)
+- [ ] Gemma 3:27b / Llama 3.1:70b integration
+- [ ] Long-term agent RAG over project history
+- [ ] Visual regression testing automation
+- [ ] Performance profiling over time
 
-### Phase 3: Tool Integration
-- MCP tool registry (30+ tools)
-- File system operations
-- GitHub integration
-- Terminal execution
-- Web search & research tools
-
-### Phase 4: Advanced Features
-- Event store UI (timeline viewer)
-- Debate visualization
-- Project management
-- Multi-project support
+### Phase 6: Polish & Distribution
+- [ ] Electron desktop distribution
+- [ ] Offline mode support
+- [ ] Multi-user collaborative workspaces
+- [ ] Production build optimization
 
 ---
 

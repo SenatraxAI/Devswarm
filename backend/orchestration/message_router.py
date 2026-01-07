@@ -2,7 +2,7 @@
 Message routing based on @mentions
 Routes messages to mentioned agents
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from orchestration.mention_parser import MentionParser
 
 
@@ -13,13 +13,23 @@ class MessageRouter:
         self.coordinator = coordinator
         self.mention_parser = MentionParser()
     
-    async def route_message(self, message: str, sender: str = "User") -> Dict[str, Any]:
+    async def route_message(
+        self, 
+        message: str, 
+        sender: str = "User", 
+        project_id: str = "default",
+        branch_name: str = "main",
+        thread_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Route a message to mentioned agents
+        Route a message to mentioned agents within a project and branch context
         
         Args:
             message: Message text with potential @mentions
             sender: Who sent the message (User or agent name)
+            project_id: The project context
+            branch_name: Current exploration branch
+            thread_id: Optional message threading ID
             
         Returns:
             Routing information including mentioned agents
@@ -30,6 +40,9 @@ class MessageRouter:
         routing_info = {
             "original_message": message,
             "sender": sender,
+            "project_id": project_id,
+            "branch_name": branch_name,
+            "thread_id": thread_id,
             "mentioned_agents": mentioned_agents,
             "should_notify": [],
             "routing_strategy": self._determine_strategy(mentioned_agents)
@@ -37,7 +50,6 @@ class MessageRouter:
         
         # Determine which agents should be notified
         if mentioned_agents:
-            # Specific agents mentioned
             routing_info["should_notify"] = mentioned_agents
         elif sender == "User":
             # User message with no mentions - route to PM by default
@@ -59,7 +71,10 @@ class MessageRouter:
         self,
         message: str,
         mentioned_agents: List[str],
-        sender: str
+        sender: str,
+        project_id: str = "default",
+        branch_name: str = "main",
+        thread_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Notify mentioned agents and collect their responses
@@ -68,29 +83,45 @@ class MessageRouter:
             message: The message text
             mentioned_agents: List of agent names to notify
             sender: Who sent the original message
+            project_id: The project context
+            branch_name: Current exploration branch
+            thread_id: Optional message threading ID
             
         Returns:
             List of agent responses
         """
         responses = []
+        agents = self.coordinator.get_agents(project_id)
         
         for agent_name in mentioned_agents:
-            if agent_name in self.coordinator.agents:
-                agent = self.coordinator.agents[agent_name]
-                
+            # Match by name or role prefix
+            target_agent = None
+            for name, agent in agents.items():
+                if agent_name.lower() in name.lower() or agent_name.lower() == agent.role.lower():
+                    target_agent = agent
+                    break
+            
+            if target_agent:
                 # Mark agent as mentioned in their session
-                agent.session.add_message(
+                target_agent.session.add_message(
                     "user",
                     f"[Mentioned by {sender}] {message}",
-                    metadata={"mentioned": True, "sender": sender}
+                    metadata={
+                        "mentioned": True, 
+                        "sender": sender, 
+                        "project_id": project_id,
+                        "branch_name": branch_name,
+                        "thread_id": thread_id
+                    }
                 )
                 
-                # Agent can process and respond
-                # (In Phase 2, this will trigger actual AI response)
+                # Responses will be handled asynchronously by the coordinator/event loop
+                # The agent will eventually call self.event_log.append_event with the branch/thread
                 responses.append({
-                    "agent": agent_name,
+                    "agent": target_agent.name,
                     "notified": True,
-                    "status": "acknowledged"
+                    "status": "acknowledged",
+                    "branch": branch_name
                 })
         
         return responses
