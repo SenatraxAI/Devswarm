@@ -67,7 +67,7 @@
 **Storage Format**: JSON Lines (1 event per line)  
 **Features**: Queryable by agent, type, timestamp
 
-### 2.7: Bickering Framework (In Progress 🔄)
+### 2.7: Bickering Framework (90% Complete 🔄)
 
 #### Completed Components:
 - [x] **Debate Detector**
@@ -91,10 +91,20 @@
     - Hardened positions (no stance changes)
   - User escalation only when genuinely stuck
 
+- [x] **Multi-Angle Analyzer**
+  - Forces perspective coverage: Security, Performance, UX, DX, Ops, Cost, Scalability
+  - Maps agents to their primary perspectives
+  - Generates perspective matrix
+  - Prompts agents to consider other viewpoints
+
+- [x] **Coordinator Integration**
+  - Debate system initialized in coordinator
+  - Detects debate triggers in user messages
+  - Logs debate initiation to console
+
 #### In Progress:
-- [ ] Multi-angle analyzer (force all perspectives)
-- [ ] Agent integration
 - [ ] End-to-end testing
+- [ ] Frontend debate visualization (Phase 4)
 
 ---
 
