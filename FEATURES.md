@@ -151,24 +151,18 @@ All 6 P0 priority tools implemented:
   - Search code
   - OAuth support (simulated for now)
 
-### 3.2 Development Tools (P1) - 20% Complete
+### 3.2 Development Tools (P1) - 60% Complete
 
 #### Completed:
-- [x] **Test Executor** (Custom Tool)
-  - Framework auto-detection (pytest.ini, jest.config.js, vitest.config.ts)
-  - Pytest support with JSON report parsing
-  - Jest support with JSON output
-  - Vitest support
-  - Structured results (pass/fail counts, duration, failures)
-  - Test history tracking
+- [x] **Test Executor** - pytest/jest/vitest with auto-detection
+- [x] **Tavily Search** - AI-optimized web research API
+- [x] **Dependency Manager** - pip/npm/yarn with auto-detection
 
 #### In Progress:
-- [ ] Dependency Manager (pip/npm/yarn)
-- [ ] Code Navigator (AST analysis)
-- [ ] Tavily Search (AI-optimized web research)
+- [ ] Code Navigator (AST analysis - implementing now)
 - [ ] Database Tool (MCP Toolbox wrapper)
 
-**Last Updated**: Phase 3.2 - Test Executor complete (1/5 tools)
+**Last Updated**: Phase 3.2 - 3/5 tools complete
 
 ---
 
