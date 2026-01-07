@@ -216,34 +216,35 @@ class MCPHost:
         """
         tools = []
         
-        for tool_name, tool_data in self.tools.items():
+        # Get all registered tools
+        all_tools = self.tool_registry.list_tools()
+        
+        for tool_name in all_tools:
             # Check permissions if agent specified
-            if agent and not self.can_agent_use_tool(agent, tool_name):
+            if agent and not self.access_control.can_use_tool(agent, tool_name):
                 continue
             
-            source, *_ = tool_data
+            tool = self.tool_registry.get_tool(tool_name)
             
             tools.append({
                 "name": tool_name,
-                "source": source,
-                "description": f"Tool from {source}"
+                "description": getattr(tool, "description", f"Tool: {tool_name}")
             })
         
         return tools
     
     def get_tool_schema(self, tool_name: str) -> Optional[Dict]:
         """Get schema for a specific tool"""
-        if tool_name not in self.tools:
+        tool = self.tool_registry.get_tool(tool_name)
+        if not tool:
             return None
         
-        source, *tool_data = self.tools[tool_name]
-        
-        if source == "custom":
-            _, schema = tool_data
-            return schema
-        
-        # TODO: Retrieve schema from MCP server
-        return {"name": tool_name, "source": source}
+        # Every tool class has a generic schema if not explicitly defined
+        # For now, return a placeholder or look for a schema attribute
+        if hasattr(tool, "SCHEMA"):
+            return tool.SCHEMA
+            
+        return {"name": tool_name, "description": getattr(tool, "description", "")}
     
     async def shutdown(self):
         """Shutdown all server connections"""
@@ -254,5 +255,4 @@ class MCPHost:
             print(f"  ✓ Disconnected {name}")
         
         self.servers.clear()
-        self.tools.clear()
         self.is_initialized = False
