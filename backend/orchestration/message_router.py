@@ -104,12 +104,17 @@ class MessageRouter:
                     break
             
             if target_agent:
+                # If thread_id is present, it's a DM, so use a dedicated branch
+                target_branch = branch_name
+                if thread_id and thread_id.startswith("dm-"):
+                    target_branch = f"dm/{target_agent.name.replace(' ', '_').lower()}"
+                
                 # Mark agent as mentioned and trigger processing
                 asyncio.create_task(
                     target_agent.process_message(
                         f"[Mentioned by {sender}] {message}",
                         websocket=websocket,
-                        branch_name=branch_name,
+                        branch_name=target_branch,
                         thread_id=thread_id
                     )
                 )
@@ -120,7 +125,7 @@ class MessageRouter:
                     "agent": target_agent.name,
                     "notified": True,
                     "status": "acknowledged",
-                    "branch": branch_name
+                    "branch": target_branch
                 })
         
         return responses

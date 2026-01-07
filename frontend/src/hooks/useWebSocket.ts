@@ -17,6 +17,8 @@ interface AgentMessage {
     agent: string;
     message: string;
     messageType: 'thought' | 'code' | 'response' | 'error';
+    branch_name?: string;
+    thread_id?: string;
     timestamp: number;
 }
 

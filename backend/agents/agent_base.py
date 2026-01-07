@@ -82,19 +82,25 @@ class Agent:
             available_tools = self.mcp_host.get_available_tools(self.name)
             print(f"  {self.name}: {len(available_tools)} tools available")
         
-        # Create session
-        self.session = AgentSession(
-            agent_id=self.id,
-            agent_name=self.name,
-            system_prompt=system_prompt
-        )
-        
-        # Add system prompt as first message
-        self.session.add_message("system", system_prompt)
+        # Create sessions mapping for parallel workflows
+        self.sessions: Dict[str, AgentSession] = {}
     
+    def get_session(self, branch_name: str) -> AgentSession:
+        """Get or create a session for a specific branch"""
+        if branch_name not in self.sessions:
+            print(f"🧠 {self.name}: Initializing new session context for branch '{branch_name}'")
+            session = AgentSession(
+                agent_id=self.id,
+                agent_name=self.name,
+                system_prompt=self.system_prompt
+            )
+            session.add_message("system", self.system_prompt)
+            self.sessions[branch_name] = session
+        return self.sessions[branch_name]
+
     async def process_message(self, user_message: str, websocket=None, branch_name: str = "main", thread_id: Optional[str] = None) -> str:
         """
-        Process a user message and generate response
+        Process a user message and generate response in a specific session
         
         Args:
             user_message: Message from user or another agent
@@ -106,14 +112,16 @@ class Agent:
             Agent's response
         """
         self.current_branch = branch_name
+        session = self.get_session(branch_name)
+        
         # Update status
-        self.session.status = "thinking"
+        session.status = "thinking"
         
         # Add user message to session
-        self.session.add_message("user", user_message)
+        session.add_message("user", user_message)
         
         # Build prompt from session + event log context
-        prompt = self._build_prompt()
+        prompt = self._build_prompt(session)
         
         # Generate response using model
         try:
@@ -136,7 +144,8 @@ class Agent:
                             "type": "agent_token",
                             "data": {
                                 "agent": self.name,
-                                "token": token
+                                "token": token,
+                                "branch_name": branch_name
                             }
                         })
                     except:
@@ -146,8 +155,8 @@ class Agent:
             full_response = "".join(response_parts)
             
             # Add response to session
-            self.session.add_message("assistant", full_response)
-            self.session.status = "speaking"
+            session.add_message("assistant", full_response)
+            session.status = "speaking"
             
             # Send final message over WebSocket
             if websocket:
@@ -186,17 +195,17 @@ class Agent:
             return full_response
             
         except Exception as e:
-            self.session.status = "error"
+            session.status = "error"
             error_msg = f"Error generating response: {str(e)}"
-            self.session.add_message("assistant", error_msg)
+            session.add_message("assistant", error_msg)
             return error_msg
         finally:
             # Return to idle after a delay
             await asyncio.sleep(0.1)
-            self.session.status = "idle"
+            session.status = "idle"
     
-    def _build_prompt(self) -> str:
-        """Build prompt from session messages with clear role markers"""
+    def _build_prompt(self, session: AgentSession) -> str:
+        """Build prompt from specific session messages with clear role markers"""
         # Format messages for model
         prompt_parts = []
         
@@ -204,12 +213,13 @@ class Agent:
         if self.event_log:
             from orchestration.team_memory import TeamMemory
             team_memory = TeamMemory(self.event_log)
+            # Filter shared context by branch if possible/needed in future
             shared_context = team_memory.get_shared_context(self.name, limit=10)
             
             if shared_context != "No shared context available.":
                 prompt_parts.append(f"TEAM CONTEXT:\n{shared_context}\n")
         
-        for msg in self.session.get_recent_messages(20):
+        for msg in session.get_recent_messages(20):
             if msg.role == "system":
                 prompt_parts.append(f"SYSTEM INSTRUCTIONS: {msg.content}")
             elif msg.role == "user":

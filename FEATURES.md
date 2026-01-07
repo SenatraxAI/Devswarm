@@ -29,7 +29,7 @@
 
 ---
 
-## Phase 2: Core Agent Implementation (95% Complete)
+## Phase 2: Core Agent Implementation (Complete ✅)
 
 ### 2.1-2.3: Chat & UI
 - [x] @Mention system for agent targeting
@@ -67,277 +67,76 @@
 **Storage Format**: JSON Lines (1 event per line)  
 **Features**: Queryable by agent, type, timestamp
 
-### 2.7: Bickering Framework (90% Complete 🔄)
-
-#### Completed Components:
-- [x] **Debate Detector**
-  - Triggers: Architecture, Security, Database, Framework, Deployment, Testing, API Design
-  - Keywords: "should we", "i propose", "what about"
-  - Auto-detects which agents should participate
-
-- [x] **Evidence Tracker**
-  - Validates research quality
-  - Source credibility scores (OWASP: 0.95, Medium: 0.70, Unknown: 0.40)
-  - Recency scoring (2024: 1.0, 2020: 0.5, 2015: 0.3)
-  - Challenges weak arguments
-
-- [x] **Autonomous Debate Manager**
-  - Unlimited debate rounds (no artificial limits)
-  - Smart stuck detection:
-    - Circular arguments (same point 3x)
-    - Persistent ties (50/50 split)
-    - Evidence stagnation (no research 5 rounds)
-    - External constraints (budget/timeline keywords)
-    - Hardened positions (no stance changes)
-  - User escalation only when genuinely stuck
-
-- [x] **Multi-Angle Analyzer**
-  - Forces perspective coverage: Security, Performance, UX, DX, Ops, Cost, Scalability
-  - Maps agents to their primary perspectives
-  - Generates perspective matrix
-  - Prompts agents to consider other viewpoints
-
-- [x] **Coordinator Integration**
-  - Debate system initialized in coordinator
-  - Detects debate triggers in user messages
-  - Logs debate initiation to console
-
-#### In Progress:
-- [ ] End-to-end testing
-- [ ] Frontend debate visualization (Phase 4)
+### 2.7: Bickering Framework ✅
+- [x] **Debate Detector**: Triggers on architecture, security, and complex tech decisions.
+- [x] **Evidence Tracker**: Research quality scoring based on recency and source credibility.
+- [x] **Autonomous Debate Manager**: Handles multi-round discussions with automated "stuck" detection.
+- [x] **Multi-Angle Analyzer**: Forces perspectives like Security, Performance, and UX.
 
 ---
 
-## Phase 3: Tool Integration (In Progress 🔄)
+## Phase 3: Tool Integration ✅
 
 ### 3.1 Foundation Tools (P0) - ✅ COMPLETE
-
-All 6 P0 priority tools implemented:
-
-- [x] **MCP Host Infrastructure**
-  - Central coordinator (hub-and-spoke architecture)
-  - Unified tool registry
-  - Access control framework
-  - Transport layer interfaces (stdio/SSE)
-
-- [x] **Command Executor** (Custom Tool)
-  - Safe command execution with whitelist validation
-  - Allowed: python, pip, npm, yarn, pytest, jest, git, docker
-  - Blocked patterns: rm -rf, sudo, pipes, eval, exec
-  - Timeout protection (30s default)
-  - Output truncation (10K chars max)
-
-- [x] **Ruff Linter** (Custom Tool)
-  - Python linting (ruff check)
-  - Auto-formatting (ruff format)
-  - JSON output parsing
-  - Lint history tracking
-
-- [x] **Filesystem Tool** (Custom Tool)
-  - Read/write files with UTF-8 encoding
-  - List directories (recursive option)
-  - Search files by pattern + content
-  - Access boundary enforcement
-
-- [x] **Context7 MCP** (Wrapper - MCP integration pending)
-  - Documentation search (15+ languages)
-  - AI-optimized results
-  - Local caching
-  - Simulated for now (full MCP pending)
-
-- [x] **GitHub MCP** (Wrapper - MCP integration pending)
-  - Read repository files
-  - Create issues
-  - Search code
-  - OAuth support (simulated for now)
+- [x] **MCP Host Infrastructure**: Unified tool registry and transport layer (stdio/SSE).
+- [x] **Command Executor**: Safe whitelisted shell command execution.
+- [x] **Ruff Linter**: Python linting and auto-formatting.
+- [x] **Filesystem Tool**: Secure read/write/list operations for limited directories.
 
 ### 3.2 Development Tools (P1) - ✅ COMPLETE
+- [x] **Test Executor**: pytest/jest with auto-detection.
+- [x] **Tavily Search**: AI-optimized web research API.
+- [x] **Dependency Manager**: pip/npm/yarn automation.
+- [x] **Code Navigator**: AST-based project analysis.
+- [x] **Database Tool**: SQLite management via agents.
 
-All 5 P1 development tools implemented:
+### 3.3 Quality & Advanced Tools - ✅ COMPLETE
+- [x] **Security Scanner**: Automated vuln detection.
+- [x] **Coverage Analyzer**: Metrics integration.
+- [x] **Documentation Generator**: Auto-markdown generation from docstrings.
+- [x] **Log Analyzer**: Pattern matching and error discovery.
+- [x] **Performance Profiler**: cProfile integration.
 
-- [x] **Test Executor** - pytest/jest/vitest with framework auto-detection
-- [x] **Tavily Search** - AI-optimized web research API  
-- [x] **Dependency Manager** - pip/npm/yarn with auto-detection & installation
-- [x] **Code Navigator** - AST analysis (imports, definitions, call graphs, project structure)
-- [x] **Database Tool** - Safe SQL operations with parameterized queries
+---
 
-### 3.3 Quality Tools (P2) - ✅ COMPLETE
+## Phase 4: Project Dashboard & Visualization ✅
 
-All 5 P2 quality tools implemented:
+### 4.1-4.3: Project Management & Dashboard
+- [x] **VS Code-style Homepage**: Entry point for all development with recent projects list.
+- [x] **Project Manager API**: CRUD operations for workspaces via `/api/v1/projects`.
+- [x] **Strict Physical Isolation**: Isolated project environments and event stores.
 
-- [x] **Security Scanner** - Vulnerability detection (SQL injection, XSS, hardcoded secrets, command injection)
-- [x] **Coverage Analyzer** - Test coverage metrics (pytest-cov, jest --coverage)
-- [x] **Test Generator** - Auto-generate test suites from code analysis
-- [x] **Complexity Analyzer** - Cyclomatic & cognitive complexity metrics
-- [x] **Snyk Scanner** - Dependency vulnerability scanning via Snyk API
+### 4.7: Professional DM Overhaul ✅ (NEW)
+- [x] **Slack-like Workspace**: Dedicated, persistent chat interfaces for agent DMs.
+- [x] **Context Awareness**: Seamless switching between "General Chat" and individual private rooms.
+- [x] **Notification System**: Unread message badges and "Attention Required" pulsing indicators.
+- [x] **Isolated Message Routing**: Direct messages are automatically routed to dedicated chat contexts.
 
-**Total Tools Built**: 16 tools (6 P0 + 5 P1 + 5 P2)
-
-### 3.4 Advanced Tools (P3) - ✅ COMPLETE
-
-All 6 P3 advanced tools implemented:
-
-- [x] **Documentation Generator** - Auto-generate markdown/HTML docs from code
-- [x] **Log Analyzer** - Parse logs, detect patterns, find errors  
-- [x] **Performance Profiler** - CPU profiling with cProfile
-- [x] **Refactoring Engine** - AST-based rename and extract method
-- [x] **Property-Based Testing** - Generate Hypothesis test patterns
-- [x] **Visual Regression Detector** - Screenshot comparison (Playwright)
-
-**Total Tools Built**: 22 tools (6 P0 + 5 P1 + 5 P2 + 6 P3)
-
-## Tool Integration - ✅ COMPLETE
-
-All 22 tools connected to agent system:
-
-- [x] **Tool Registry** - Central registration of all 22 tools
-- [x] **Access Control** - Per-agent permission matrix enforced
-- [x] **MCP Host Integration** - Tool execution with authorization
-- [x] **Agent Connection** - All 8 agents can access their permitted tools
-
-**Integration Status**: Agents can now invoke tools through MCP Host with proper access control.
-
-## Settings UI - ✅ COMPLETE
-
-Visual interface for configuration management:
-
-- [x] **Add/Delete Servers** - Dynamically register new MCP servers (e.g., Fetch, Slack) via UI
-- [x] **Advanced Configuration** - Raw JSON support for complex MCP metadata and environment variables
-- [x] **Self-Healing Index** - Automatic SQLite schema migrations for backward compatibility
-
-**Features**:
-- Web-based settings at `/settings`
-- Toggle, Add, or Delete MCP servers
-- Advanced JSON configuration for any standard MCP server
-- Update API keys with automatic `.env` sync using absolute paths
-- No more manual JSON editing required
-
-**Last Updated**: Settings UI 2.0 - Full server life-cycle and schema migration management
+### 4.8: Parallel Parallel Multi-Tasking & Branching ✅ (NEW)
+- [x] **Multi-Session Agents**: Agents can handle multiple tasks on different branches simultaneously.
+- [x] **Memory Lineage**: Every event tracks `parent_events` and `branch_name` for Git-like history.
+- [x] **Parallel Workflow Visualization**: The interactive timeline rendered multi-lane task progress.
+- [x] **Session Persistence**: Switching contexts preserves the conversation history and thinking state.
 
 ---
 
 ## Key Features Summary
 
 ### 🤖 **Agent Capabilities**
-- Real AI (Gemma 3:4b via Ollama)
-- Streaming responses
-- @Mention coordination
-- Autonomous collaboration
-- Persistent memory (event store)
-- Evidence-based debates
+- Real AI (Gemma 3:4b) with streaming tokens.
+- **Autonomous Multi-Tasking**: Parallel work on different code branches.
+- **Slack-style communication**: Dedicated direct message rooms.
+- Autonomous debate and evidence-based decision making.
 
-### 💾 **Memory System**
-- Git-like event log (JSON Lines)
-- Team memory queries
-- Context window management
-- AI summarization
-- Infinite conversation history
+### 💬 **Communication & UX**
+- **Real-time Notifications**: Badges for new agent responses or stalled tasks.
+- **Interactive Timeline**: SVG Graph showing branch relationships and event lineage.
+- **Micro-animations**: Thinking indicators and high-vibe terminal aesthetics.
 
-### 🗣️ **Debate System** (New!)
-- Evidence-based argumentation
-- Multi-perspective analysis
-- Autonomous discussion (unlimited rounds)
-- Smart stuck detection
-- Research tool integration
-
-### 🔧 **Technical Stack**
-- **Backend**: FastAPI, Python 3.11+
-- **Frontend**: Next.js 14, React 18
-- **AI**: Gemma 3:4b (Ollama)
-- **Storage**: JSON Lines, SQLite (planned)
-- **Communication**: WebSocket (real-time)
-
----
-
-## Architecture Highlights
-
-### Event Store (Phase 2.6)
-```
-backend/data/events/default/
-  events.jsonl       # All events (append-only)
-  
-Event Structure:
-{
-  "id": "uuid",
-  "timestamp": 1736217600000,
-  "agent": "Sarah Chen",
-  "type": "AGENT_MESSAGE_SENT",
-  "parent_events": ["parent-uuid"],
-  "payload": {"message": "..."},
-  "metadata": {"tokens": 150}
-}
-```
-
-### Debate System (Phase 2.7)
-```
-orchestration/
-  debate_detector.py        # Trigger detection
-  evidence_tracker.py       # Research validation
-  autonomous_debate.py      # Stuck detection
-  (multi_angle_analyzer.py) # Coming soon
-```
-
----
-
-## Phase 4: Project Dashboard & Visualization ✅ COMPLETE
-Establish the foundational architecture for managing complex, long-running development workflows across localized workspaces.
-
-### 4.1-4.3: Project Management & Dashboard
-- [x] **VS Code-style Homepage**: Entry point for all development with recent projects list.
-- [x] **Project Manager API**: CRUD operations for workspaces via `/api/v1/projects`.
-- [x] **Strict Physical Isolation**: Each project has its own directory, `events.jsonl`, and SQLite `index.db`.
-- [x] **System Stats**: Live VRAM and Agent Health widgets (Phase 4.1-4.3 complete).
-
-### 4.4-4.5: Git-like Branching & DMs
-- [x] **Memory Lineage**: Every event tracks multiple `parent_events` and `branch_name`.
-- [x] **Exploratory Branching**: Support for branching off any point in history.
-- [x] **Agent DMs**: Private, threaded conversations with specific agents.
-- [x] **WebSocket Routing**: Direct message propagation through the swarm.
-
-### 4.6: Timeline V3 (Interactive Graph)
-- [x] **High-Fidelity SVG Graph**: Visualizes the Git-commit graph of agent interactions.
-- [x] **Multi-lane Branching**: Render parallel branches with bezier curve connections.
-- [x] **Interactive Nodes**: Expandable cards for tool results and agent thoughts.
-- [x] **Project Filtering**: Independent project timelines accessible via `?p=project_id`.
-
----
-
-## Architecture Highlights (Updated Phase 4)
-
-### Multi-Project Structure
-```
-data/projects/
-  {project_id}/
-    events.jsonl        # Source of truth (Isolated)
-    index.db            # SQLite search index (Isolated)
-    metadata.json       # Project stats & branch config
-```
-
-### Git-like Event Lineage
-```json
-{
-  "id": "uuid",
-  "branch_name": "feat/api-auth",
-  "parent_events": ["parent-uuid"],
-  "thread_id": "dm-sarah-123"
-}
-```
-
----
-
-## What's Next
-
-### Phase 5: Advanced Intelligence (Upcoming)
-- [ ] Gemma 3:27b / Llama 3.1:70b integration
-- [ ] Long-term agent RAG over project history
-- [ ] Visual regression testing automation
-- [ ] Performance profiling over time
-
-### Phase 6: Polish & Distribution
-- [ ] Electron desktop distribution
-- [ ] Offline mode support
-- [ ] Multi-user collaborative workspaces
-- [ ] Production build optimization
+### 💾 **Memory & Architecture**
+- **Git-like Event Store**: Append-only JSON Lines with parent/child relationship tracking.
+- **Environment Isolation**: Per-project physical security and database indexing.
+- **Self-Healing Index**: Automatic SQLite migrations for metadata tracking.
 
 ---
 
@@ -363,4 +162,4 @@ npm run dev
 
 ---
 
-**Last Commit**: Phase 4 - Dynamic MCP Management and Self-Healing SQLite Migrations
+**Last Commit**: Phase 4 - Professional DMs and Parallel Multi-Tasking Implementation
