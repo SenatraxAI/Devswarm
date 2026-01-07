@@ -251,11 +251,12 @@ class Agent:
         )
     
     def get_status(self) -> Dict[str, Any]:
-        """Get current agent status"""
+        """Get current agent status (defaults to main branch)"""
+        session = self.get_session("main")
         return {
             "name": self.name,
             "role": self.role,
-            "status": self.session.status,
-            "current_task": self.session.current_task,
-            "message_count": len(self.session.messages)
+            "status": session.status,
+            "current_task": session.current_task,
+            "message_count": len(session.messages)
         }
