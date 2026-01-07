@@ -6,6 +6,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 import asyncio
+from storage.event_log import EventLog, EventType
 
 
 @dataclass
@@ -58,7 +59,8 @@ class Agent:
         role: str,
         system_prompt: str,
         model_manager,
-        mcp_host
+        mcp_host,
+        event_log: Optional[EventLog] = None
     ):
         self.agent_id = agent_id
         self.name = name
@@ -66,6 +68,7 @@ class Agent:
         self.system_prompt = system_prompt
         self.model_manager = model_manager
         self.mcp_host = mcp_host
+        self.event_log = event_log or EventLog()  # Default event log
         
         # Create session
         self.session = AgentSession(
@@ -94,7 +97,7 @@ class Agent:
         # Add user message to session
         self.session.add_message("user", user_message)
         
-        # Build prompt from session
+        # Build prompt from session + event log context
         prompt = self._build_prompt()
         
         # Generate response using model
@@ -130,6 +133,21 @@ class Agent:
             # Add response to session
             self.session.add_message("assistant", full_response)
             self.session.status = "speaking"
+            
+            # Log event to event log
+            if self.event_log:
+                self.event_log.append_event(
+                    event_type=EventType.AGENT_MESSAGE_SENT,
+                    agent=self.name,
+                    payload={
+                        "message": full_response,
+                        "in_response_to": user_message
+                    },
+                    metadata={
+                        "tokens": len(response_parts),
+                        "model": "gemma3:4b"
+                    }
+                )
             
             return full_response
             

@@ -1,9 +1,13 @@
 """
-Extended API routes with MCP tool endpoints
+Extended """
+API routes for DevSwarm
+Handles user requests and agent communication
 """
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from typing import Dict, Any
 from pydantic import BaseModel
-from typing import List, Dict, Optional
+from orchestration.coordinator import AgentCoordinator
+from storage.event_log import EventType
 
 router = APIRouter()
 
@@ -170,6 +174,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # Route message to agents
                 if coordinator and coordinator.is_ready:
+                    # Log user message event
+                    coordinator.event_log.append_event(
+                        event_type=EventType.USER_MESSAGE,
+                        agent="User",
+                        payload={"message": message_text},
+                        metadata={"session_id": data.get("timestamp", 0)}
+                    )
+                    
                     routing_info = await coordinator.process_user_message(message_text)
                     
                     # Send routing confirmation back
