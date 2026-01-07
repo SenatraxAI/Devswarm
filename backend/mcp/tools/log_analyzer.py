@@ -62,7 +62,7 @@ class LogAnalyzer:
             entries = self._parse_log_file(path, log_format)
             
             # Filter by time range
-           if time_range:
+            if time_range:
                 entries = self._filter_by_time(entries, time_range)
             
             # Analyze entries
