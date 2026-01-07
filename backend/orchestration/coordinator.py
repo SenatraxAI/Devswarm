@@ -2,7 +2,7 @@
 Agent Coordinator - manages the 8-agent team
 Handles agent initialization and request routing
 """
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 import asyncio
 from agents.agent_base import Agent
 from orchestration.message_router import MessageRouter
@@ -93,7 +93,8 @@ class AgentCoordinator:
         message: str, 
         project_id: str = "default", 
         branch_name: str = "main",
-        thread_id: Optional[str] = None
+        thread_id: Optional[str] = None,
+        websocket: Optional[Any] = None
     ) -> Dict:
         """Process a user message within a specific project and branch context"""
         agents = self.get_agents(project_id)
@@ -126,7 +127,8 @@ class AgentCoordinator:
                 sender="User",
                 project_id=project_id,
                 branch_name=branch_name,
-                thread_id=thread_id
+                thread_id=thread_id,
+                websocket=websocket
             )
             routing_info["agent_responses"] = responses
         

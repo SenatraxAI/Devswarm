@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { WS_URL } from '@/config';
 
 interface AgentStatus {
     name: string;
@@ -41,7 +42,7 @@ interface UseWebSocketReturn {
     sendMessage: (message: any) => void;
 }
 
-export function useWebSocket(url: string = 'ws://localhost:8000/api/v1/ws'): UseWebSocketReturn {
+export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
     const [isConnected, setIsConnected] = useState(false);
     const [agents, setAgents] = useState<AgentStatus[]>([]);
     const [messages, setMessages] = useState<AgentMessage[]>([]);

@@ -112,11 +112,11 @@ devswarm/
 
 ## 🛠️ Development Roadmap
 
-- [x] **Phase 1**: Foundation Infrastructure (Weeks 1-2)
-- [ ] **Phase 2**: Core Agent Implementation (Weeks 3-4)
-- [ ] **Phase 3**: Tool Integration (Weeks 5-6)
-- [ ] **Phase 4**: Visualization (Weeks 7-8)
-- [ ] **Phase 5**: Advanced Capabilities (Weeks 9-10)
+- [x] **Phase 1**: Foundation Infrastructure (Complete ✅)
+- [x] **Phase 2**: Core Agent Implementation (Complete ✅)
+- [x] **Phase 3**: Tool Integration (Complete ✅)
+- [x] **Phase 4**: Visualization & Dashboard (Complete ✅)
+- [ ] **Phase 5**: Advanced Capabilities (In Progress 🔄)
 - [ ] **Phase 6**: Polish & Release (Weeks 11-12)
 
 ## 🎯 Key Features
@@ -158,34 +158,16 @@ SNYK_TOKEN=your_token_here
 
 ### MCP Server Configuration
 
-Add any MCP server dynamically via `backend/mcp/mcp_servers.json`:
-
-```json
-{
-  "mcp_servers": {
-    "your_server_name": {
-      "enabled": true,
-      "type": "mcp",
-      "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@scope/mcp-server-package"],
-      "description": "Your server description",
-      "config": {
-        "api_key": "${YOUR_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-**Available MCP Servers**: [MCP Server Directory](https://github.com/modelcontextprotocol/servers)
+Add any MCP server dynamically via the **Settings UI** (recommended) or `backend/mcp/mcp_servers.json`:
 
 **How to add a new MCP server**:
-1. Edit `backend/mcp/mcp_servers.json`
-2. Add your server configuration
-3. Set `"enabled": true`
-4. Add any required API keys to `.env`
-5. Restart backend
+1. Open the app and navigate to **Settings** (gear icon)
+2. Click **"Add Server"**
+3. Enter the command (e.g. `npx -y @modelcontextprotocol/server-fetch`)
+4. (Optional) Provide JSON configuration for API keys or connection strings
+5. **Restart the backend** to activate the new server process
+
+**Note**: You can also manually edit `backend/mcp/mcp_servers.json`, but the UI provides validation and JSON formatting help.
 
 ### Get API Keys (Optional)
 
@@ -208,4 +190,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Status**: Phase 1 - Foundation Infrastructure ✅
+**Status**: Phase 4 - Project Dashboard & Visualization ✅ COMPLETE

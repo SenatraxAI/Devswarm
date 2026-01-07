@@ -2,6 +2,7 @@
 Message routing based on @mentions
 Routes messages to mentioned agents
 """
+import asyncio
 from typing import List, Dict, Any, Optional
 from orchestration.mention_parser import MentionParser
 
@@ -74,7 +75,8 @@ class MessageRouter:
         sender: str,
         project_id: str = "default",
         branch_name: str = "main",
-        thread_id: Optional[str] = None
+        thread_id: Optional[str] = None,
+        websocket: Optional[Any] = None
     ) -> List[Dict[str, Any]]:
         """
         Notify mentioned agents and collect their responses
@@ -102,17 +104,14 @@ class MessageRouter:
                     break
             
             if target_agent:
-                # Mark agent as mentioned in their session
-                target_agent.session.add_message(
-                    "user",
-                    f"[Mentioned by {sender}] {message}",
-                    metadata={
-                        "mentioned": True, 
-                        "sender": sender, 
-                        "project_id": project_id,
-                        "branch_name": branch_name,
-                        "thread_id": thread_id
-                    }
+                # Mark agent as mentioned and trigger processing
+                asyncio.create_task(
+                    target_agent.process_message(
+                        f"[Mentioned by {sender}] {message}",
+                        websocket=websocket,
+                        branch_name=branch_name,
+                        thread_id=thread_id
+                    )
                 )
                 
                 # Responses will be handled asynchronously by the coordinator/event loop

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Settings, Server, Key, Shield, RefreshCw } from 'lucide-react'
+import { Settings, Server, Key, Shield, RefreshCw, Plus, Trash2, X, AlertCircle } from 'lucide-react'
+import { API_URL } from '@/config'
 
 interface MCPServer {
     enabled: boolean
@@ -22,28 +23,48 @@ export default function SettingsPage() {
     const [mcpServers, setMcpServers] = useState<Record<string, MCPServer>>({})
     const [apiKeys, setApiKeys] = useState<Record<string, APIKeyStatus>>({})
     const [loading, setLoading] = useState(true)
+    const [isRefreshing, setIsRefreshing] = useState(false)
+    const [expandedSections, setExpandedSections] = useState({ mcp: true, api: true })
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [newServer, setNewServer] = useState<Partial<MCPServer>>({
+        enabled: true,
+        type: 'mcp',
+        transport: 'stdio',
+        command: '',
+        args: [],
+        description: '',
+        config: {}
+    })
+    const [rawConfig, setRawConfig] = useState('')
 
     useEffect(() => {
         loadSettings()
     }, [])
 
-    const loadSettings = async () => {
+    const loadSettings = async (showRefresh = false) => {
+        if (showRefresh) setIsRefreshing(true)
         try {
             // Load MCP servers
-            const serversRes = await fetch('http://localhost:8000/api/settings/mcp-servers')
+            const serversRes = await fetch(`${API_URL}/settings/mcp-servers`)
             const serversData = await serversRes.json()
             setMcpServers(serversData.servers || {})
 
             // Load API keys
-            const keysRes = await fetch('http://localhost:8000/api/settings/api-keys')
+            const keysRes = await fetch(`${API_URL}/settings/api-keys`)
             const keysData = await keysRes.json()
             setApiKeys(keysData.api_keys || {})
 
             setLoading(false)
+            setIsRefreshing(false)
         } catch (error) {
             console.error('Failed to load settings:', error)
             setLoading(false)
+            setIsRefreshing(false)
         }
+    }
+
+    const toggleSection = (section: 'mcp' | 'api') => {
+        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
     }
 
     const toggleServer = async (serverName: string) => {
@@ -51,7 +72,7 @@ export default function SettingsPage() {
         const updated = { ...server, enabled: !server.enabled }
 
         try {
-            await fetch(`http://localhost:8000/api/settings/mcp-servers/${serverName}`, {
+            await fetch(`${API_URL}/settings/mcp-servers/${serverName}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated)
@@ -63,9 +84,22 @@ export default function SettingsPage() {
         }
     }
 
+    const deleteServer = async (serverName: string) => {
+        if (!confirm(`Are you sure you want to delete server '${serverName}'?`)) return
+
+        try {
+            await fetch(`${API_URL}/settings/mcp-servers/${serverName}`, {
+                method: 'DELETE'
+            })
+            loadSettings(true)
+        } catch (error) {
+            console.error('Failed to delete server:', error)
+        }
+    }
+
     const updateAPIKey = async (keyName: string, value: string) => {
         try {
-            await fetch('http://localhost:8000/api/settings/api-keys', {
+            await fetch(`${API_URL}/settings/api-keys`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key_name: keyName, value })
@@ -79,7 +113,46 @@ export default function SettingsPage() {
         }
     }
 
-    if (loading) {
+    const saveNewServer = async () => {
+        if (!newServer.command) return
+
+        let finalConfig = {}
+        if (rawConfig) {
+            try {
+                finalConfig = JSON.parse(rawConfig)
+            } catch (e) {
+                alert('Invalid JSON in Configuration field')
+                return
+            }
+        }
+
+        const name = newServer.command.split(/[/\\]/).pop()?.split('@').pop()?.replace(/server-/, '') || 'new-server'
+        const serverData = { ...newServer, config: finalConfig }
+
+        try {
+            await fetch(`${API_URL}/settings/mcp-servers/${name}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverData)
+            })
+            setIsAddModalOpen(false)
+            setRawConfig('')
+            setNewServer({
+                enabled: true,
+                type: 'mcp',
+                transport: 'stdio',
+                command: '',
+                args: [],
+                description: '',
+                config: {}
+            })
+            loadSettings(true)
+        } catch (error) {
+            console.error('Failed to save server:', error)
+        }
+    }
+
+    if (loading && !isRefreshing) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
                 <div className="text-xl text-white">Loading settings...</div>
@@ -91,108 +164,247 @@ export default function SettingsPage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center gap-3 mb-8">
-                    <Settings className="w-8 h-8 text-purple-400" />
-                    <h1 className="text-3xl font-bold text-white">Settings</h1>
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-500/20 rounded-lg">
+                            <Settings className="w-8 h-8 text-purple-400" />
+                        </div>
+                        <h1 className="text-3xl font-black text-white tracking-tight">System Settings</h1>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => loadSettings(true)}
+                            className={`p-3 rounded-xl bg-slate-800 border border-purple-500/20 hover:border-purple-500/50 transition-all text-purple-400 hover:text-purple-300 ${isRefreshing ? 'opacity-50 pointer-events-none' : ''}`}
+                            title="Refresh Settings"
+                        >
+                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* MCP Servers Section */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 mb-6 border border-purple-500/20">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Server className="w-5 h-5 text-purple-400" />
-                        <h2 className="text-xl font-semibold text-white">MCP Servers</h2>
-                    </div>
+                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 overflow-hidden mb-6">
+                    <button
+                        onClick={() => toggleSection('mcp')}
+                        className="w-full flex items-center justify-between p-6 hover:bg-slate-700/30 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Server className={`w-5 h-5 transition-colors ${expandedSections.mcp ? 'text-purple-400' : 'text-gray-500'}`} />
+                            <h2 className="text-xl font-semibold text-white">MCP Servers</h2>
+                        </div>
+                        <span className="text-xs text-purple-400 font-black tracking-[0.2em] uppercase">
+                            {Object.keys(mcpServers).length} Connected
+                        </span>
+                    </button>
 
-                    <div className="space-y-3">
-                        {Object.entries(mcpServers).map(([name, server]) => (
-                            <div
-                                key={name}
-                                className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between hover:bg-slate-700/70 transition-colors"
-                            >
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={`w-3 h-3 rounded-full ${server.enabled ? 'bg-green-400' : 'bg-gray-500'
-                                                }`}
-                                        />
-                                        <h3 className="text-white font-medium">{name}</h3>
-                                        <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
-                                            {server.type}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-400 mt-1 ml-6">{server.description}</p>
-                                </div>
-
+                    {expandedSections.mcp && (
+                        <div className="p-6 pt-0 space-y-3">
+                            <div className="flex items-center justify-between mb-4">
+                                <p className="text-sm text-gray-400 font-medium font-outfit">Manage your Model Context Protocol servers</p>
                                 <button
-                                    onClick={() => toggleServer(name)}
-                                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${server.enabled
-                                            ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
-                                            : 'bg-gray-600/50 text-gray-300 hover:bg-gray-600/70'
-                                        }`}
+                                    onClick={(e) => { e.stopPropagation(); setIsAddModalOpen(true); }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-purple-900/40"
                                 >
-                                    {server.enabled ? 'Enabled' : 'Disabled'}
+                                    <Plus className="w-4 h-4" />
+                                    <span>Add Server</span>
                                 </button>
                             </div>
-                        ))}
-                    </div>
+
+                            {Object.keys(mcpServers).length === 0 && (
+                                <div className="text-center py-12 bg-slate-900/30 rounded-xl border border-dashed border-slate-700">
+                                    <Server className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+                                    <div className="text-slate-500 font-medium">No MCP servers configured</div>
+                                    <button
+                                        onClick={() => setIsAddModalOpen(true)}
+                                        className="mt-4 text-purple-400 hover:text-purple-300 text-sm font-bold"
+                                    >
+                                        Configure first server
+                                    </button>
+                                </div>
+                            )}
+                            {Object.entries(mcpServers).map(([name, server]) => (
+                                <div
+                                    key={name}
+                                    className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between hover:bg-slate-700/70 transition-colors"
+                                >
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className={`w-3 h-3 rounded-full ${server.enabled ? 'bg-green-400' : 'bg-gray-500'
+                                                    }`}
+                                            />
+                                            <h3 className="text-white font-medium">{name}</h3>
+                                            <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
+                                                {server.type}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-400 mt-1 ml-6">{server.description}</p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => toggleServer(name)}
+                                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${server.enabled
+                                                ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                                                : 'bg-gray-600/50 text-gray-300 hover:bg-gray-600/70'
+                                                }`}
+                                        >
+                                            {server.enabled ? 'Enabled' : 'Disabled'}
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); deleteServer(name); }}
+                                            className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+                                            title="Delete Server"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* API Keys Section */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Key className="w-5 h-5 text-purple-400" />
-                        <h2 className="text-xl font-semibold text-white">API Keys</h2>
-                    </div>
+                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 overflow-hidden">
+                    <button
+                        onClick={() => toggleSection('api')}
+                        className="w-full flex items-center justify-between p-6 hover:bg-slate-700/30 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Key className={`w-5 h-5 transition-colors ${expandedSections.api ? 'text-purple-400' : 'text-gray-500'}`} />
+                            <h2 className="text-xl font-semibold text-white">Security & API Keys</h2>
+                        </div>
+                        <span className="text-xs text-gray-500 font-mono tracking-widest uppercase">
+                            {Object.keys(apiKeys).length} Keys
+                        </span>
+                    </button>
 
-                    <div className="space-y-4">
-                        {Object.entries(apiKeys).map(([keyName, status]) => (
-                            <div key={keyName} className="bg-slate-700/50 rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div>
-                                        <h3 className="text-white font-medium">{keyName}</h3>
-                                        <p className="text-sm text-gray-400">{status.description}</p>
-                                    </div>
-                                    <div
-                                        className={`px-3 py-1 rounded-full text-sm ${status.configured
+                    {expandedSections.api && (
+                        <div className="p-6 pt-0 space-y-4">
+                            {Object.entries(apiKeys).map(([keyName, status]) => (
+                                <div key={keyName} className="bg-slate-700/50 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div>
+                                            <h3 className="text-white font-medium">{keyName}</h3>
+                                            <p className="text-sm text-gray-400">{status.description}</p>
+                                        </div>
+                                        <div
+                                            className={`px-3 py-1 rounded-full text-sm ${status.configured
                                                 ? 'bg-green-500/20 text-green-300'
                                                 : 'bg-yellow-500/20 text-yellow-300'
-                                            }`}
-                                    >
-                                        {status.configured ? 'Configured' : 'Not Set'}
+                                                }`}
+                                        >
+                                            {status.configured ? 'Configured' : 'Not Set'}
+                                        </div>
                                     </div>
-                                </div>
 
-                                <input
-                                    type="password"
-                                    placeholder={`Enter ${keyName}...`}
-                                    className="w-full px-4 py-2 bg-slate-600/50 text-white rounded-lg border border-purple-500/20 focus:border-purple-500 focus:outline-none"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            updateAPIKey(keyName, e.currentTarget.value)
-                                            e.currentTarget.value = ''
-                                        }
-                                    }}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Press Enter to save</p>
-                            </div>
-                        ))}
-                    </div>
+                                    <input
+                                        type="password"
+                                        placeholder={`Enter ${keyName}...`}
+                                        className="w-full px-4 py-2 bg-slate-600/50 text-white rounded-lg border border-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                updateAPIKey(keyName, e.currentTarget.value)
+                                                e.currentTarget.value = ''
+                                            }
+                                        }}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Press Enter to save</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Info Banner */}
-                <div className="mt-6 bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                        <Shield className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-gray-300">
-                            <p className="font-medium mb-1">Configuration Notes:</p>
-                            <ul className="list-disc list-inside space-y-1 text-gray-400">
-                                <li>Toggling servers requires a backend restart to take effect</li>
-                                <li>API keys are stored in backend/.env file</li>
-                                <li>System works without API keys (20 of 22 tools functional)</li>
-                            </ul>
-                        </div>
+                <div className="mt-12 p-6 bg-blue-500/5 rounded-xl border border-blue-500/20 flex gap-4">
+                    <Shield className="w-6 h-6 text-blue-400 shrink-0" />
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-black text-blue-400 tracking-wider font-outfit uppercase">Configuration Notes:</h4>
+                        <ul className="text-xs text-blue-300/60 space-y-1 ml-4 list-disc font-medium">
+                            <li>Toggling servers requires a backend restart to take effect</li>
+                            <li>API keys are locally stored in backend/.env file (standard for security)</li>
+                            <li>System works without keys (20 of 22 tools functional)</li>
+                        </ul>
                     </div>
                 </div>
+
+                {/* Add Server Modal */}
+                {isAddModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="bg-slate-900 border border-purple-500/30 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-purple-500/10">
+                            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-slate-800/50">
+                                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                    <Plus className="w-5 h-5 text-purple-400" />
+                                    Add MCP Server
+                                </h3>
+                                <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Command (Full Path)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. npx -y @modelcontextprotocol/server-filesystem"
+                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                            value={newServer.command}
+                                            onChange={e => setNewServer({ ...newServer, command: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Arguments (Space separated)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. C:/Users/Docs"
+                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all placeholder:text-gray-700 font-mono text-sm"
+                                            value={newServer.args?.join(' ')}
+                                            onChange={e => setNewServer({ ...newServer, args: e.target.value.split(' ') })}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Description</label>
+                                        <textarea
+                                            placeholder="What does this server do?"
+                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all h-20 resize-none placeholder:text-gray-700 font-medium text-sm"
+                                            value={newServer.description}
+                                            onChange={e => setNewServer({ ...newServer, description: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Advanced Config (JSON)</label>
+                                        <textarea
+                                            placeholder='e.g. { "api_key": "${MY_VAR}" }'
+                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all h-24 resize-none placeholder:text-gray-700 font-mono text-xs"
+                                            value={rawConfig}
+                                            onChange={e => setRawConfig(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/20 flex gap-3">
+                                    <AlertCircle className="w-5 h-5 text-blue-400 shrink-0" />
+                                    <p className="text-xs text-blue-300/70 font-medium">New servers will be added to mcp_servers.json. You'll need to restart the backend to activate them.</p>
+                                </div>
+
+                                <button
+                                    onClick={saveNewServer}
+                                    disabled={!newServer.command}
+                                    className="w-full py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:grayscale text-white font-black rounded-xl transition-all shadow-lg shadow-purple-900/40"
+                                >
+                                    Confirm Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

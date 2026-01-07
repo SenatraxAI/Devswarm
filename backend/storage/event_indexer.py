@@ -42,6 +42,35 @@ class EventIndexer:
                 )
             """)
             
+            # Run migrations for existing databases that might be missing new columns
+            cursor.execute("PRAGMA table_info(events)")
+            columns = [row[1] for row in cursor.fetchall()]
+            
+            migrations_applied = False
+            
+            if "branch_name" not in columns:
+                print(f"🔧 Migrating {self.db_path}: Adding 'branch_name' column")
+                cursor.execute("ALTER TABLE events ADD COLUMN branch_name TEXT DEFAULT 'main'")
+                migrations_applied = True
+                
+            if "thread_id" not in columns:
+                print(f"🔧 Migrating {self.db_path}: Adding 'thread_id' column")
+                cursor.execute("ALTER TABLE events ADD COLUMN thread_id TEXT")
+                migrations_applied = True
+
+            if "project_id" not in columns:
+                print(f"🔧 Migrating {self.db_path}: Adding 'project_id' column")
+                cursor.execute("ALTER TABLE events ADD COLUMN project_id TEXT DEFAULT 'default'")
+                migrations_applied = True
+
+            if "metadata_json" not in columns:
+                print(f"🔧 Migrating {self.db_path}: Adding 'metadata_json' column")
+                cursor.execute("ALTER TABLE events ADD COLUMN metadata_json TEXT")
+                migrations_applied = True
+
+            if migrations_applied:
+                print(f"✅ Schema migration complete for {self.db_path}")
+
             # Create indices for common queries
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON events(timestamp)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_agent ON events(agent)")

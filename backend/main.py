@@ -6,6 +6,11 @@ from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 from api.routes import router
 from orchestration.coordinator import AgentCoordinator
@@ -91,9 +96,11 @@ async def health():
 # Include API routes
 from api.event_routes import router as event_router
 from api.project_routes import router as project_router
+from api.settings_routes import router as settings_router
 app.include_router(router, prefix="/api/v1")
 app.include_router(event_router, prefix="/api/v1")
 app.include_router(project_router, prefix="/api/v1")
+app.include_router(settings_router, prefix="/api/v1")
 
 
 @app.websocket("/api/v1/ws")
@@ -132,7 +139,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     message, 
                     project_id=project_id,
                     branch_name=branch_name,
-                    thread_id=thread_id
+                    thread_id=thread_id,
+                    websocket=websocket
                 )
                 
             elif msg_type == "direct_message":

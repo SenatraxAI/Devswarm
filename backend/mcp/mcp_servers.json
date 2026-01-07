@@ -1,77 +1,86 @@
 {
-    "mcp_servers": {
-        "filesystem": {
-            "enabled": true,
-            "type": "custom",
-            "description": "File operations with access boundaries",
-            "config": {}
-        },
-        "context7": {
-            "enabled": false,
-            "type": "mcp",
-            "transport": "stdio",
-            "command": "npx",
-            "args": [
-                "-y",
-                "@context7/mcp-server"
-            ],
-            "description": "AI-optimized documentation lookup",
-            "config": {
-                "api_key": "${CONTEXT7_API_KEY}"
-            }
-        },
-        "github": {
-            "enabled": false,
-            "type": "mcp",
-            "transport": "stdio",
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-github"
-            ],
-            "description": "GitHub repository access",
-            "config": {
-                "personal_access_token": "${GITHUB_TOKEN}"
-            }
-        },
-        "database": {
-            "enabled": false,
-            "type": "mcp",
-            "transport": "stdio",
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-postgres"
-            ],
-            "description": "PostgreSQL database access",
-            "config": {
-                "connection_string": "${DATABASE_URL}"
-            }
-        }
+  "mcp_servers": {
+    "filesystem": {
+      "enabled": true,
+      "type": "custom",
+      "description": "File operations with access boundaries",
+      "config": {}
     },
-    "_comment": "How to add a new MCP server:",
-    "_instructions": [
-        "1. Add a new entry under 'mcp_servers' with a unique name",
-        "2. Set 'enabled': true to activate it",
-        "3. For MCP servers: set type='mcp', provide command and args",
-        "4. For custom tools: set type='custom' (already implemented in code)",
-        "5. Add any required config values or env var references (${VAR_NAME})",
-        "6. Restart backend to load the new configuration"
-    ],
-    "_example_new_server": {
-        "slack": {
-            "enabled": false,
-            "type": "mcp",
-            "transport": "stdio",
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-slack"
-            ],
-            "description": "Slack integration",
-            "config": {
-                "bot_token": "${SLACK_BOT_TOKEN}"
-            }
-        }
+    "context7": {
+      "enabled": true,
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@context7/mcp-server"
+      ],
+      "description": "AI-optimized documentation lookup",
+      "config": {
+        "api_key": "${CONTEXT7_API_KEY}"
+      }
+    },
+    "github": {
+      "enabled": true,
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "description": "GitHub repository access",
+      "config": {
+        "personal_access_token": "${GITHUB_TOKEN}"
+      }
+    },
+    "database": {
+      "enabled": true,
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres"
+      ],
+      "description": "PostgreSQL database access",
+      "config": {
+        "connection_string": "${DATABASE_URL}"
+      }
+    },
+    "sequential-thinking": {
+      "enabled": true,
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "npx -y @modelcontextprotocol/server-sequential-thinking",
+      "args": [],
+      "description": "Helps agents think through complex problems step-by-step.",
+      "config": {}
     }
+  },
+  "_comment": "How to add a new MCP server:",
+  "_instructions": [
+    "1. Add a new entry under 'mcp_servers' with a unique name",
+    "2. Set 'enabled': true to activate it",
+    "3. For MCP servers: set type='mcp', provide command and args",
+    "4. For custom tools: set type='custom' (already implemented in code)",
+    "5. Add any required config values or env var references (${VAR_NAME})",
+    "6. Restart backend to load the new configuration"
+  ],
+  "_example_new_server": {
+    "slack": {
+      "enabled": false,
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-slack"
+      ],
+      "description": "Slack integration",
+      "config": {
+        "bot_token": "${SLACK_BOT_TOKEN}"
+      }
+    }
+  }
 }

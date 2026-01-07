@@ -8,7 +8,12 @@ from typing import Dict, Any, List, Optional
 import json
 from pathlib import Path
 
-router = APIRouter(prefix="/api/settings", tags=["settings"])
+router = APIRouter(prefix="/settings", tags=["settings"])
+
+# Get absolute path to backend directory
+BASE_DIR = Path(__file__).parent.parent
+CONFIG_PATH = BASE_DIR / "mcp" / "mcp_servers.json"
+ENV_PATH = BASE_DIR / ".env"
 
 
 class MCPServerConfig(BaseModel):
@@ -32,15 +37,14 @@ class APIKeyUpdate(BaseModel):
 async def get_mcp_servers():
     """Get all MCP server configurations"""
     try:
-        config_path = Path("backend/mcp/mcp_servers.json")
+        if not CONFIG_PATH.exists():
+            print(f"⚠️ Warning: Config file not found at {CONFIG_PATH}")
+            return {"servers": {}, "success": False}
         
-        if not config_path.exists():
-            return {"servers": {}}
-        
-        with open(config_path, 'r') as f:
+        with open(CONFIG_PATH, 'r') as f:
             data = json.load(f)
         
-        return {"servers": data.get("mcp_servers", {})}
+        return {"servers": data.get("mcp_servers", {}), "success": True}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -50,11 +54,9 @@ async def get_mcp_servers():
 async def update_mcp_server(server_name: str, config: MCPServerConfig):
     """Update or add MCP server configuration"""
     try:
-        config_path = Path("backend/mcp/mcp_servers.json")
-        
         # Load existing config
-        if config_path.exists():
-            with open(config_path, 'r') as f:
+        if CONFIG_PATH.exists():
+            with open(CONFIG_PATH, 'r') as f:
                 data = json.load(f)
         else:
             data = {"mcp_servers": {}}
@@ -63,7 +65,7 @@ async def update_mcp_server(server_name: str, config: MCPServerConfig):
         data["mcp_servers"][server_name] = config.dict()
         
         # Save
-        with open(config_path, 'w') as f:
+        with open(CONFIG_PATH, 'w') as f:
             json.dump(data, f, indent=2)
         
         return {"success": True, "message": f"Server '{server_name}' updated"}
@@ -76,12 +78,10 @@ async def update_mcp_server(server_name: str, config: MCPServerConfig):
 async def delete_mcp_server(server_name: str):
     """Delete MCP server configuration"""
     try:
-        config_path = Path("backend/mcp/mcp_servers.json")
-        
-        if not config_path.exists():
+        if not CONFIG_PATH.exists():
             raise HTTPException(status_code=404, detail="Config not found")
         
-        with open(config_path, 'r') as f:
+        with open(CONFIG_PATH, 'r') as f:
             data = json.load(f)
         
         if server_name not in data.get("mcp_servers", {}):
@@ -91,7 +91,7 @@ async def delete_mcp_server(server_name: str):
         del data["mcp_servers"][server_name]
         
         # Save
-        with open(config_path, 'w') as f:
+        with open(CONFIG_PATH, 'w') as f:
             json.dump(data, f, indent=2)
         
         return {"success": True, "message": f"Server '{server_name}' deleted"}
@@ -133,12 +133,10 @@ async def get_api_keys():
 async def update_api_key(update: APIKeyUpdate):
     """Update API key in .env file"""
     try:
-        env_path = Path("backend/.env")
-        
         # Read existing .env
         env_vars = {}
-        if env_path.exists():
-            with open(env_path, 'r') as f:
+        if ENV_PATH.exists():
+            with open(ENV_PATH, 'r') as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith('#') and '=' in line:
@@ -149,7 +147,7 @@ async def update_api_key(update: APIKeyUpdate):
         env_vars[update.key_name] = update.value
         
         # Write back
-        with open(env_path, 'w') as f:
+        with open(ENV_PATH, 'w') as f:
             f.write("# DevSwarm Environment Variables\n")
             f.write("# Auto-updated via Settings UI\n\n")
             for key, value in env_vars.items():

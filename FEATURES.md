@@ -1,6 +1,6 @@
 # DevSwarm - Implemented Features
 
-**Last Updated**: January 7, 2026  
+**Last Updated**: January 8, 2026  
 **Current Phase**: Phase 4: Project Dashboard & Visualization (Complete ✅)
 
 ---
@@ -201,19 +201,18 @@ All 22 tools connected to agent system:
 
 Visual interface for configuration management:
 
-- [x] **MCP Server Management** - Enable/disable servers with toggles
-- [x] **API Key Configuration** - Secure input fields for all API keys
-- [x] **Real-time Status** - Live status indicators for each config
-- [x] **Backend API** - Full REST API for settings CRUD operations
+- [x] **Add/Delete Servers** - Dynamically register new MCP servers (e.g., Fetch, Slack) via UI
+- [x] **Advanced Configuration** - Raw JSON support for complex MCP metadata and environment variables
+- [x] **Self-Healing Index** - Automatic SQLite schema migrations for backward compatibility
 
 **Features**:
 - Web-based settings at `/settings`
-- Toggle MCP servers on/off
-- Update API keys without editing files
-- Visual status indicators
+- Toggle, Add, or Delete MCP servers
+- Advanced JSON configuration for any standard MCP server
+- Update API keys with automatic `.env` sync using absolute paths
 - No more manual JSON editing required
 
-**Last Updated**: Settings UI complete - Full configuration management via web interface
+**Last Updated**: Settings UI 2.0 - Full server life-cycle and schema migration management
 
 ---
 
@@ -364,4 +363,4 @@ npm run dev
 
 ---
 
-**Last Commit**: Phase 2.7 - Autonomous debate manager with stuck detection
+**Last Commit**: Phase 4 - Dynamic MCP Management and Self-Healing SQLite Migrations

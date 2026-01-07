@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '@/config';
 
 export interface DevSwarmEvent {
     id: string;
@@ -35,7 +36,7 @@ export function useEvents(projectId: string = 'default', limit: number = 50): Us
         try {
             const currentOffset = isMore ? offset + limit : 0;
             const response = await fetch(
-                `/api/v1/events/?project_id=${projectId}&limit=${limit}&offset=${currentOffset}`
+                `${API_URL}/events/?project_id=${projectId}&limit=${limit}&offset=${currentOffset}`
             );
 
             if (!response.ok) {
