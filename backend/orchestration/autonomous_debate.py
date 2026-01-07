@@ -16,7 +16,7 @@ class DebateState(Enum):
     RESOLVED = "resolved"
 
 
-class AutonomousDebateManager:
+class AutonomousDebate:
     """
     Manages autonomous agent debates
     - Detects when to continue vs escalate
@@ -24,7 +24,15 @@ class AutonomousDebateManager:
     - Tracks debate progress
     """
     
-    def __init__(self):
+    def __init__(
+        self,
+        detector: Any = None,
+        tracker: Any = None,
+        analyzer: Any = None
+    ):
+        self.detector = detector
+        self.tracker = tracker
+        self.analyzer = analyzer
         self.active_debates = {}
     
     def should_continue_debate(self, debate_history: List[Dict[str, Any]]) -> bool:
