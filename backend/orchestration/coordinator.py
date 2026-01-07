@@ -1,9 +1,12 @@
 """
-Agent Coordinator - Orchestrates the 8-agent team
-Manages agent sessions, communication, and task routing
+Agent Coordinator - manages the 8-agent team
+Handles agent initialization and request routing
 """
-from typing import Dict, List, Optional
+from typing import Dict, Optional, List
 import asyncio
+from agents.agent_base import Agent
+from orchestration.message_router import MessageRouter
+from storage.event_log import EventLog, EventType
 
 
 class AgentCoordinator:
@@ -37,21 +40,11 @@ class AgentCoordinator:
         print("🤖 Initializing agent team...")
         
         # Import all personas
-        from agents.personas.sarah_chen import SARAH_CHEN_SYSTEM_PROMPT
-        from agents.personas.marcus_williams import MARCUS_WILLIAMS_SYSTEM_PROMPT
-        from agents.personas.elena_rodriguez import ELENA_RODRIGUEZ_SYSTEM_PROMPT
-        from agents.personas import sarah_chen
-        from agents.personas import marcus_williams
-        from agents.personas import elena_rodriguez
-        from agents.personas import james_okonkwo
-        from agents.personas import priya_sharma
-        from agents.personas import david_kim
-        from agents.personas import aisha_patel
-        from agents.personas import oliver_hansen
+        from agents.personas import sarah_chen, marcus_williams, elena_rodriguez
+        from agents.personas import james_okonkwo, priya_sharma, david_kim
+        from agents.personas import aisha_patel, oliver_hansen
         
         # Create agent instances
-        from agents.agent_base import Agent
-        
         persona_configs = [
             ("sarah_chen", "Sarah Chen", "PM", sarah_chen),
             ("marcus_williams", "Marcus Williams", "Architect", marcus_williams),
@@ -64,7 +57,9 @@ class AgentCoordinator:
         ]
         
         for agent_id, name, role, persona_module in persona_configs:
-            system_prompt = persona_module.SYSTEM_PROMPT
+            # Get system prompt from module (each has {AGENT_ID}_SYSTEM_PROMPT)
+            system_prompt = getattr(persona_module, f"{agent_id.upper()}_SYSTEM_PROMPT")
+            
             agent = Agent(
                 agent_id=agent_id,
                 name=name,

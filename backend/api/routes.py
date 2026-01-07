@@ -1,10 +1,9 @@
 """
-Extended """
 API routes for DevSwarm
 Handles user requests and agent communication
 """
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from orchestration.coordinator import AgentCoordinator
 from storage.event_log import EventType
