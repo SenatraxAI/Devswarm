@@ -19,14 +19,32 @@ class MCPHost:
     Manages server connections, tool registry, and access control
     """
     
+    
     def __init__(self):
+        """Initialize MCP Host with tool registry, access control, and dynamic config"""
         print("🔧 Initializing MCP Host...")
         
-        # TODO: Load configuration
-        # TODO: Connect to configured servers
-        # TODO: Build tool registry
+        # Load MCP server configurations
+        from mcp.mcp_config import MCPConfig
+        self.mcp_config = MCPConfig()
         
+        # Initialize tool registry and access control
+        from mcp.tool_registry import ToolRegistry
+        from mcp.access_control import AccessControl
+        
+        self.tool_registry = ToolRegistry()
+        self.access_control = AccessControl()
+        self.servers = {}
         self.is_initialized = True
+        
+        # Log enabled MCP servers
+        enabled = self.mcp_config.get_enabled_servers()
+        if enabled:
+            print(f"📡 MCP Servers configured:")
+            for name, config in enabled.items():
+                print(f"  • {name}: {config.get('description', 'No description')}")
+        
+        print(f"✅ MCP Host initialized with {len(self.tool_registry.list_tools())} tools")
         print(f"✅ MCP Host ready with {len(self.tools)} tools")
     
     async def connect_server(
