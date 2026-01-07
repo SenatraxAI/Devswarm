@@ -45,7 +45,6 @@ class MCPHost:
                 print(f"  • {name}: {config.get('description', 'No description')}")
         
         print(f"✅ MCP Host initialized with {len(self.tool_registry.list_tools())} tools")
-        print(f"✅ MCP Host ready with {len(self.tools)} tools")
     
     async def connect_server(
         self,
