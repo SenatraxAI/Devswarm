@@ -74,9 +74,18 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
             try {
                 const data = JSON.parse(event.data);
 
-                // Filter events by current project ID to prevent overlap
-                if (data.data?.project_id && data.data.project_id !== project_id) {
-                    return;
+                // Filter events by current project ID, but BE LIKELY to allow if it's an echo
+                const messageProjectId = data.data?.project_id || data.project_id;
+                if (messageProjectId && messageProjectId !== project_id) {
+                    console.warn(`📩 IGNORED message from project ${messageProjectId} (Current: ${project_id})`, data);
+                    // If it's the first message we've ever gotten and we're on 'default', maybe adopt it?
+                    if (project_id === 'default' || project_id === null) {
+                        console.log('🔄 Adopting project ID from incoming message:', messageProjectId);
+                        setProjectId(messageProjectId);
+                        localStorage.setItem('active_project_id', messageProjectId);
+                    } else {
+                        return; // Still ignore if it's a hard mismatch between two real projects
+                    }
                 }
 
                 switch (data.type) {

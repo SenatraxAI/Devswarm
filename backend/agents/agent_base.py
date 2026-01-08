@@ -158,9 +158,10 @@ class Agent:
             print(f"{'='*60}\n")
             
             max_iterations = 10
-            max_consecutive_failures = 3  # Stop after 3 failed tools in a row
+            max_consecutive_failures = 3
             iteration = 0
             consecutive_tool_failures = 0
+            last_tool_call = None  # To detect repeating loops
             pending_message = ""
             final_response = ""
             
@@ -213,8 +214,23 @@ class Agent:
                 # CHECK FOR TOOL CALLS FIRST
                 print(f"🔍 Checking for tool calls...")
                 tool_output = await self._process_tool_calls(full_response, session, websocket, branch_name, thread_id)
+                
                 if tool_output:
                     print(f"🛠️ TOOL WAS EXECUTED: {tool_output[:100]}")
+                    
+                    # LOOP DETECTION: Check if we just did this exact thing
+                    # Extract the tool call string for comparison
+                    tool_pattern = re.compile(r'<tool_code>(.*?)</tool_code>', re.DOTALL)
+                    match = tool_pattern.search(full_response)
+                    if match:
+                        current_call = match.group(1).strip()
+                        if current_call == last_tool_call:
+                            print(f"⚠️ LOOP DETECTED: Repeating {current_call}. Stopping.")
+                            session.add_message("system", "Warning: You are repeating the same tool call. Please try a different approach or conclude your response.")
+                            # Don't break immediately, give it one chance to fix it, but prevent infinite
+                            if iteration > 5:
+                                break
+                        last_tool_call = current_call
                 else:
                     print(f"✅ NO TOOL CALL - Final response")
                 
@@ -394,6 +410,8 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
         # Use a list of formatted strings to avoid any multi-line confusion
         for msg in session.get_recent_messages(15):
             role_marker = msg.role.upper()
+            if role_marker == "SYSTEM":
+                role_marker = "OBSERVATION"
             content = msg.content.strip()
             history_parts.append(f"{role_marker}: {content}")
         
@@ -512,7 +530,7 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
             else:
                 output_str = f"Tool '{tool_name}' executed. Result: {str(result)[:200]}"
             
-            # Add to memory
+            # Add to memory as OBSERVATION (Models treat SYSTEM as rules, OBSERVATION as tool results)
             session.add_message("system", output_str)
             
             return output_str
