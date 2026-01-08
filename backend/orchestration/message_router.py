@@ -62,13 +62,54 @@ class MessageRouter:
         elif mentioned_agents:
             routing_info["should_notify"] = mentioned_agents
         elif sender == "User":
-            # Check for implicit group addressing
+            # Check for expert keyword triggers
             lower_msg = message.lower()
-            group_triggers = ["guys", "team", "everyone", "y'all", "folks", "all"]
+            words = lower_msg.split()
+            
+            expert_notified = []
+            expert_mapping = {
+                "backend": "James Okonkwo",
+                "database": "James Okonkwo",
+                "server": "James Okonkwo",
+                "api": "James Okonkwo",
+                "sql": "James Okonkwo",
+                "frontend": "Elena Rodriguez",
+                "ui": "Elena Rodriguez",
+                "ux": "Elena Rodriguez",
+                "visual": "Elena Rodriguez",
+                "react": "Elena Rodriguez",
+                "architecture": "Marcus Williams",
+                "structure": "Marcus Williams",
+                "design": "Marcus Williams",
+                "refactor": "Marcus Williams",
+                "security": "David Kim",
+                "exploit": "David Kim",
+                "auth": "David Kim",
+                "vulnerability": "David Kim",
+                "devops": "Priya Sharma",
+                "deploy": "Priya Sharma",
+                "docker": "Priya Sharma",
+                "pipeline": "Priya Sharma",
+                "test": "Aisha Patel",
+                "qa": "Aisha Patel",
+                "bug": "Aisha Patel",
+                "verify": "Aisha Patel",
+            }
+
+            for keyword, agent in expert_mapping.items():
+                if keyword in lower_msg:
+                    expert_notified.append(agent)
+            
+            # Check for implicit group addressing
+            group_triggers = ["guys", "team", "everyone", "y'all", "folks", "all", "swarm"]
             
             if any(trigger in lower_msg.split() for trigger in group_triggers):
-                routing_info["should_notify"] = ["Sarah Chen", "Marcus Williams"]
+                routing_info["should_notify"] = list(set(["Sarah Chen", "Marcus Williams"] + expert_notified))
                 routing_info["routing_strategy"] = "group_broadcast"
+            elif expert_notified:
+                # Notify PM and the experts
+                routing_info["should_notify"] = list(set(["Sarah Chen"] + expert_notified))
+                routing_info["routing_strategy"] = "expert_routing"
             else:
                 routing_info["should_notify"] = ["Sarah Chen"]
                 routing_info["routing_strategy"] = "default_pm"

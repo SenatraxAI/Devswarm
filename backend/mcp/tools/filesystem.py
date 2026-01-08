@@ -41,13 +41,14 @@ class FilesystemTool:
         
         return False
     
-    async def read_file(self, file_path: Optional[str] = None, filename: Optional[str] = None) -> Dict[str, Any]:
+    async def read_file(self, file_path: Optional[str] = None, filename: Optional[str] = None, path: Optional[str] = None) -> Dict[str, Any]:
         """
         Read file contents
         
         Args:
             file_path: Path to file
             filename: Alias for file_path
+            path: Alias for file_path (Agentic consistency)
             
         Returns:
             {
@@ -58,10 +59,10 @@ class FilesystemTool:
             }
         """
         # Handle alias
-        file_path = file_path or filename
+        file_path = file_path or filename or path
         
         if not file_path:
-            return {"success": False, "error": "No file path provided"}
+            return {"success": False, "error": "file_path, filename or path must be specified"}
 
         if not self._is_path_allowed(file_path):
             return {
@@ -104,33 +105,22 @@ class FilesystemTool:
         except Exception as e:
             return {"success": False, "error": str(e)}
     
-    async def write_file(
-        self,
-        file_path: Optional[str] = None,
-        content: str = "",
-        create_dirs: bool = True,
-        filename: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def write_file(self, file_path: Optional[str] = None, filename: Optional[str] = None, path: Optional[str] = None, content: str = "", create_dirs: bool = True) -> Dict[str, Any]:
         """
         Write content to file
         
         Args:
             file_path: Path to file
             filename: Alias for file_path
-            content: Content to write
-            create_dirs: Create parent directories if missing
-            
-        Returns:
-            {
-                "success": bool,
-                "bytes_written": int
-            }
+            path: Alias for file_path (Agentic consistency)
+            content: File content
+            create_dirs: Whether to create parent directories
         """
         # Handle alias
-        file_path = file_path or filename
+        file_path = file_path or filename or path
         
         if not file_path:
-            return {"success": False, "error": "No file path provided"}
+            return {"success": False, "error": "file_path, filename or path must be specified"}
 
         if not self._is_path_allowed(file_path):
             return {
