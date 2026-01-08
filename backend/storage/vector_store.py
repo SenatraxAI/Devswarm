@@ -37,9 +37,44 @@ class VectorStore:
         if HAS_DEPS:
             # Load model (lazy load could be better but sticking to init for now)
             print(f"🧠 Loading embedding model for project {project_id}...")
-            # Use a lightweight model for speed
-            self.model = SentenceTransformer('all-MiniLM-L6-v2')
-            self._load_index()
+            try:
+                # Use a lightweight model for speed
+                # Timeout handling: If HuggingFace is slow, fall back to no RAG
+                from threading import Thread, Event
+                
+                model_loaded = Event()
+                model_result = [None]
+                model_error = [None]
+                
+                def load_model():
+                    try:
+                        model_result[0] = SentenceTransformer('all-MiniLM-L6-v2')
+                        model_loaded.set()
+                    except Exception as e:
+                        model_error[0] = e
+                        model_loaded.set()
+                
+                # Start download in background thread
+                thread = Thread(target=load_model, daemon=True)
+                thread.start()
+                
+                # Wait up to 30 seconds
+                if model_loaded.wait(timeout=30):
+                    if model_error[0]:
+                        raise model_error[0]
+                    self.model = model_result[0]
+                    print("✅ Embedding model loaded")
+                   self._load_index()
+                else:
+                    print("⚠️ Model download timed out after 30s. Disabling RAG.")
+                    self.HAS_DEPS = False
+                    self.model = None
+                    
+            except Exception as e:
+                print(f"⚠️ Failed to load embedding model: {e}")
+                print("⚠️ Semantic search disabled.")
+                self.HAS_DEPS = False
+                self.model = None
         else:
             print("⚠️ Vector dependencies missing. Semantic search disabled.")
 
