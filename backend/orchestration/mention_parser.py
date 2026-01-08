@@ -7,102 +7,135 @@ from typing import List, Tuple
 
 
 class MentionParser:
-    """Parse @mentions from messages"""
+    """Parse @mentions from messages with fuzzy and role matching"""
     
-    # All valid agent names
+    # Map of roles to agent names
+    ROLE_MAP = {
+        "pm": "Sarah Chen",
+        "architect": "Marcus Williams",
+        "frontend": "Elena Rodriguez",
+        "backend": "James Okonkwo",
+        "devops": "Priya Sharma",
+        "security": "David Kim",
+        "qa": "Aisha Patel",
+        "coordinator": "Oliver Hansen"
+    }
+    
+    # List of all valid agent names
     VALID_AGENTS = [
-        "Sarah Chen",
-        "Marcus Williams", 
-        "Elena Rodriguez",
-        "James Okonkwo",
-        "Priya Sharma",
-        "David Kim",
-        "Aisha Patel",
-        "Oliver Hansen"
+        "Sarah Chen", "Marcus Williams", "Elena Rodriguez", 
+        "James Okonkwo", "Priya Sharma", "David Kim", 
+        "Aisha Patel", "Oliver Hansen"
     ]
     
+    # List of group handles
+    GROUP_HANDLES = ["team", "everyone", "all", "guys"]
+
     @staticmethod
     def extract_mentions(text: str) -> List[str]:
         """
-        Extract all @mentions from text
+        Extract all agent names mentioned in text using @handle
         
-        Args:
-            text: Message text potentially containing @mentions
-            
-        Returns:
-            List of mentioned agent names
+        Supports:
+        - Full names: @Sarah Chen
+        - First names: @Sarah
+        - Roles: @PM, @Architect
+        - Groups: @team, @everyone
         """
-        mentions = []
-        
-        # Pattern: @ followed by valid agent name
-        for agent_name in MentionParser.VALID_AGENTS:
-            # Check for @AgentName or @"Agent Name"
-            patterns = [
-                f"@{agent_name}",
-                f'@"{agent_name}"',
-                f"@'{agent_name}'"
-            ]
+        if not text or "@" not in text:
+            return []
             
-            for pattern in patterns:
-                if pattern in text:
-                    mentions.append(agent_name)
-                    break
+        mentions = set()
         
-        return list(set(mentions))  # Remove duplicates
-    
-    @staticmethod
-    def is_mentioned(text: str, agent_name: str) -> bool:
-        """Check if a specific agent is mentioned in text"""
-        return agent_name in MentionParser.extract_mentions(text)
-    
+        # Regex to find all @handles (handles can include spaces if quoted or just alphanumeric)
+        # Matches: @Name, @"Full Name", @Role
+        handle_pattern = re.compile(r'@(?:"([^"]+)"|\'([^\']+)\'|(\w+))')
+        matches = handle_pattern.findall(text)
+        
+        # Flattened matches from the 3 regex groups
+        raw_handles = [m[0] or m[1] or m[2] for m in matches if any(m)]
+        
+        for handle in raw_handles:
+            h_lower = handle.lower()
+            
+            # 1. Check direct role match
+            if h_lower in MentionParser.ROLE_MAP:
+                mentions.add(MentionParser.ROLE_MAP[h_lower])
+                continue
+                
+            # 2. Check full agent name match
+            found = False
+            for agent in MentionParser.VALID_AGENTS:
+                if h_lower == agent.lower():
+                    mentions.add(agent)
+                    found = True
+                    break
+                # 3. Check first name match
+                first_name = agent.split()[0].lower()
+                if h_lower == first_name:
+                    mentions.add(agent)
+                    found = True
+                    break
+            
+            if found:
+                continue
+                
+            # 4. Check group handles
+            if h_lower in MentionParser.GROUP_HANDLES:
+                # Group expands to PM + Architect (leadership) or others depending on context
+                # For now, we return a special handle the router understands
+                mentions.add("@team")
+        
+        return list(mentions)
+
     @staticmethod
     def highlight_mentions(text: str) -> str:
-        """
-        Add HTML-style highlighting to @mentions for frontend display
-        
-        Args:
-            text: Original message text
+        """Add UI markers for mentions (used by frontend if needed)"""
+        # Simple implementation using the same regex
+        def replace_match(match):
+            handle = match.group(1) or match.group(2) or match.group(3)
+            return f'<span class="mention">@{handle}</span>'
             
-        Returns:
-            Text with mentions wrapped in span tags
-        """
-        highlighted = text
-        
-        for agent_name in MentionParser.VALID_AGENTS:
-            patterns = [
-                (f"@{agent_name}", f'<span class="mention">@{agent_name}</span>'),
-                (f'@"{agent_name}"', f'<span class="mention">@{agent_name}</span>'),
-                (f"@'{agent_name}'", f'<span class="mention">@{agent_name}</span>')
-            ]
-            
-            for pattern, replacement in patterns:
-                highlighted = highlighted.replace(pattern, replacement)
-        
-        return highlighted
-    
+        handle_pattern = re.compile(r'@(?:"([^"]+)"|\'([^\']+)\'|(\w+))')
+        return handle_pattern.sub(replace_match, text)
+
     @staticmethod
-    def format_mention(agent_name: str) -> str:
-        """Format an agent name as a mention"""
-        return f"@{agent_name}"
-    
-    @staticmethod
-    def get_mention_autocomplete(partial: str) -> List[str]:
+    def get_mention_autocomplete(partial: str) -> List[Dict[str, str]]:
         """
-        Get autocomplete suggestions for partial mention
-        
-        Args:
-            partial: Partial agent name after @
+        Get rich autocomplete suggestions
+        Returns: List of { label: "@Name", value: "Full Name", type: "agent|role|group" }
+        """
+        if partial.startswith("@"):
+            partial = partial[1:]
             
-        Returns:
-            List of matching agent names
-        """
-        if not partial:
-            return MentionParser.VALID_AGENTS
+        partial = partial.lower()
+        suggestions = []
         
-        partial_lower = partial.lower()
-        matches = [
-            agent for agent in MentionParser.VALID_AGENTS
-            if agent.lower().startswith(partial_lower)
-        ]
+        # Add Agents
+        for agent in MentionParser.VALID_AGENTS:
+            if partial in agent.lower():
+                suggestions.append({
+                    "label": f"@{agent}",
+                    "value": agent,
+                    "type": "agent"
+                })
         
-        return matches
+        # Add Roles
+        for role, agent in MentionParser.ROLE_MAP.items():
+            if partial in role.lower():
+                suggestions.append({
+                    "label": f"@{role.upper()}",
+                    "value": agent,
+                    "type": "role"
+                })
+                
+        # Add Groups
+        for group in MentionParser.GROUP_HANDLES:
+            if partial in group.lower():
+                suggestions.append({
+                    "label": f"@{group}",
+                    "value": "@team", # Special group handle
+                    "type": "group"
+                })
+                
+        return suggestions[:10] # Cap at 10

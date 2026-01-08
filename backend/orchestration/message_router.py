@@ -38,6 +38,11 @@ class MessageRouter:
         # Extract mentions
         mentioned_agents = self.mention_parser.extract_mentions(message)
         
+        # Check for group mentions (@team) in the results
+        is_group_mention = "@team" in mentioned_agents
+        if is_group_mention:
+            mentioned_agents = [m for m in mentioned_agents if m != "@team"]
+        
         routing_info = {
             "original_message": message,
             "sender": sender,
@@ -50,22 +55,21 @@ class MessageRouter:
         }
         
         # Determine which agents should be notified
-        if mentioned_agents:
+        if is_group_mention:
+            # Group mention detected - notify leadership
+            routing_info["should_notify"] = list(set(mentioned_agents + ["Sarah Chen", "Marcus Williams"]))
+            routing_info["routing_strategy"] = "group_broadcast"
+        elif mentioned_agents:
             routing_info["should_notify"] = mentioned_agents
         elif sender == "User":
             # Check for implicit group addressing
-            # "guys", "team", "everyone", "y'all" -> Pivot to group mode
-            # For now, we simulate "Team" by notifying PM + Architect to simulate discussion
-            # In a full broadcast, we might wake 3-4 agents
             lower_msg = message.lower()
             group_triggers = ["guys", "team", "everyone", "y'all", "folks", "all"]
             
             if any(trigger in lower_msg.split() for trigger in group_triggers):
-                # Broadcast intent detected
-                routing_info["should_notify"] = ["Sarah Chen", "Marcus Williams"] # Start with core leadership
+                routing_info["should_notify"] = ["Sarah Chen", "Marcus Williams"]
                 routing_info["routing_strategy"] = "group_broadcast"
             else:
-                # User message with no mentions - route to PM by default
                 routing_info["should_notify"] = ["Sarah Chen"]
                 routing_info["routing_strategy"] = "default_pm"
         
