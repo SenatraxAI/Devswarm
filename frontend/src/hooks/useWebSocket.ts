@@ -32,26 +32,19 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
         const checkProject = () => {
             const id = localStorage.getItem('active_project_id') || 'default';
             if (id !== project_id) {
-                // Clear all state for the old project
-                setMessages([]);
-                setTerminalOutput([]);
-                setCodeChanges([]);
-                setAgents([]);
-
-                // Update to new project ID
-                setProjectId(id);
-
-                // Close connection to trigger reconnect with new project
-                if (wsRef.current) {
-                    wsRef.current.close();
+                // Only clear on ACTUAL project switch, not page reload
+                if (!isInitialMount.current && project_id !== null) {
+                    setMessages([]);
+                    setTerminalOutput([]);
+                    setCodeChanges([]);
+                    setAgents([]);
                 }
-            }
-        };
+            };
 
-        checkProject();
-        const interval = setInterval(checkProject, 1000); // Poll for changes
-        return () => clearInterval(interval);
-    }, [project_id]);
+            checkProject();
+            const interval = setInterval(checkProject, 1000); // Poll for changes
+            return () => clearInterval(interval);
+        }, [project_id]);
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
