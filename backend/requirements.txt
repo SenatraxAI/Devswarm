@@ -23,8 +23,8 @@ pytest-asyncio==0.23.3
 # NOTE: Heavy dependencies commented out for Phase 1
 # These will be needed in Phase 1.4 when we implement real model inference:
 # llama-cpp-python==0.2.55
-# huggingface-hub==0.20.3
-# faiss-cpu>=1.9.0
-# sentence-transformers>=2.3.1
-# chromadb>=0.4.22
-# nvidia-ml-py3==7.352.0
+# Vector Database & Embeddings
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+# numpy is installed by faiss/sentence-transformers
+l-py3==7.352.0

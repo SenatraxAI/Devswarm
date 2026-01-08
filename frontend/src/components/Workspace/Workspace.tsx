@@ -9,7 +9,8 @@ import {
     CornerDownRight,
     Clock,
     Terminal as TerminalIcon,
-    ChevronRight
+    ChevronRight,
+    X
 } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
@@ -21,9 +22,15 @@ interface WorkspaceProps {
 
 type ViewMode = 'chat' | 'code' | 'preview';
 
+interface ReplyContext {
+    agent: string;
+    message: string;
+}
+
 export function Workspace({ projectId, activeContext, markAsRead }: WorkspaceProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('chat');
     const [inputValue, setInputValue] = useState('');
+    const [replyingTo, setReplyingTo] = useState<ReplyContext | null>(null);
     const { messages, isConnected, sendMessage } = useWebSocket();
 
     // Mark as read when context is active and we are in chat mode
@@ -33,17 +40,28 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
         }
     }, [activeContext, viewMode, markAsRead]);
 
+    const handleReply = (agent: string, message: string) => {
+        setReplyingTo({ agent, message });
+        // setInputValue(prev => `@${agent} ` + prev); // Optional: Pre-fill mention if desired, but visual context is better
+    };
+
     const handleSendMessage = () => {
         if (!inputValue.trim()) return;
 
         const isDM = activeContext !== 'general';
         const branchName = isDM ? `dm/${activeContext.replace('dm-', '').replace(' ', '_').toLowerCase()}` : 'main';
+        // Ensure thread_id matches exactly what useWebSocket filters for
         const threadId = isDM ? activeContext : undefined;
+
+        let finalMessage = inputValue;
+        if (replyingTo) {
+            finalMessage = `> [Replying to @${replyingTo.agent}]: "${replyingTo.message.substring(0, 100)}${replyingTo.message.length > 100 ? '...' : ''}"\n\n${inputValue}`;
+        }
 
         sendMessage({
             type: isDM ? 'direct_message' : 'user_message',
             recipient: isDM ? activeContext.replace('dm-', '') : undefined,
-            message: inputValue,
+            message: finalMessage,
             project_id: projectId,
             branch_name: branchName,
             thread_id: threadId,
@@ -51,6 +69,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
         });
 
         setInputValue('');
+        setReplyingTo(null);
     };
 
     const getAgentColor = (agent: string) => {
@@ -137,11 +156,17 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                                                         {new Date(msg.timestamp * 1000).toLocaleTimeString()}
                                                     </span>
                                                 </div>
-                                                <button className="opacity-0 group-hover:opacity-100 p-1 text-gray-600 hover:text-blue-500 transition-all">
+                                                <button
+                                                    onClick={() => handleReply(msg.agent || 'User', msg.message || '')}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-600 hover:text-blue-500 transition-all"
+                                                >
                                                     <CornerDownRight className="w-3 h-3" />
                                                 </button>
                                             </div>
-                                            <div className="bg-[#0a0a0a] border border-gray-800/50 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-300 leading-relaxed font-outfit">
+                                            <div
+                                                onDoubleClick={() => handleReply(msg.agent || 'User', msg.message || '')}
+                                                className="bg-[#0a0a0a] border border-gray-800/50 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-300 leading-relaxed font-outfit cursor-pointer select-none active:bg-blue-900/10 transition-colors"
+                                            >
                                                 {msg.message}
                                             </div>
                                         </div>
@@ -180,6 +205,20 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
 
             {/* Input Area Overlay */}
             <div className="p-6 border-t border-gray-800/30 bg-[#050505]/50 backdrop-blur-md">
+                {replyingTo && (
+                    <div className="mb-3 flex items-center justify-between bg-[#111] border-l-4 border-blue-500 rounded p-3 animate-in slide-in-from-bottom-2 shadow-lg">
+                        <div className="overflow-hidden flex-1 mr-4">
+                            <div className="text-xs font-bold text-blue-400 mb-0.5">Replying to {replyingTo.agent}</div>
+                            <div className="text-xs text-gray-400 truncate opacity-80">{replyingTo.message}</div>
+                        </div>
+                        <button
+                            onClick={() => setReplyingTo(null)}
+                            className="p-1.5 hover:bg-gray-800 rounded-full transition-colors text-gray-500 hover:text-white"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
                 <div className="relative group">
                     <input
                         type="text"

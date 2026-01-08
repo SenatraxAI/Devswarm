@@ -91,6 +91,12 @@ class AccessControl:
     
     def __init__(self):
         self.permissions = AGENT_PERMISSIONS
+
+    def __contains__(self, agent_name: str) -> bool:
+        return agent_name in self.permissions
+
+    def __getitem__(self, agent_name: str) -> List[str]:
+        return self.get_agent_tools(agent_name)
     
     def can_use_tool(self, agent_name: str, tool_name: str) -> bool:
         """
@@ -125,6 +131,15 @@ class AccessControl:
         agent_perms = self.permissions.get(agent_name, {})
         return agent_perms.get("role", "Unknown")
     
+    def set_permissions(self, agent_name: str, allowed_tools: List[str], role: str = "custom"):
+        """
+        Dynamically set permissions for an agent
+        """
+        self.permissions[agent_name] = {
+            "role": role,
+            "allowed_tools": allowed_tools
+        }
+
     def get_tool_usage_summary(self) -> Dict:
         """Get summary of tool permissions across agents"""
         summary = {}

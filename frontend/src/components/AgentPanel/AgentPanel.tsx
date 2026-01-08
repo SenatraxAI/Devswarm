@@ -27,6 +27,7 @@ export function AgentPanel({ projectId, activeContext, setActiveContext, notific
     };
 
     const getStatusColor = (status: string) => {
+        if (status.startsWith('Executing') || status === 'working') return 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]';
         switch (status) {
             case 'thinking': return 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]';
             case 'speaking': return 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]';
@@ -80,6 +81,8 @@ export function AgentPanel({ projectId, activeContext, setActiveContext, notific
                     const contextId = `dm-${agent.name}`;
                     const notification = notifications[contextId];
                     const isActive = activeContext === contextId;
+                    // Check if status is "busy" (working/executing/thinking)
+                    const isBusy = agent.status === 'thinking' || agent.status === 'working' || agent.status?.startsWith('Executing');
 
                     return (
                         <div
@@ -110,17 +113,24 @@ export function AgentPanel({ projectId, activeContext, setActiveContext, notific
                                 )}
                             </div>
 
+                            {/* Show message preview if inactive */}
                             {agent.message && !isActive && (
                                 <p className="text-[11px] text-gray-400 line-clamp-1 leading-relaxed italic opacity-60">
                                     {agent.message}
                                 </p>
                             )}
 
-                            {isActive && agent.status === 'thinking' && (
-                                <div className="mt-2 flex space-x-1">
-                                    <div className="w-1 h-1 bg-yellow-500 rounded-full animate-bounce" />
-                                    <div className="w-1 h-1 bg-yellow-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                                    <div className="w-1 h-1 bg-yellow-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                            {/* ALWAYS show status text if busy, even if active */}
+                            {isActive && isBusy && (
+                                <div className="mt-2 flex items-center space-x-2">
+                                    <div className="flex space-x-0.5">
+                                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" />
+                                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                                        <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-purple-400 animate-pulse">
+                                        {agent.status.startsWith('Executing') ? agent.status : 'Working...'}
+                                    </span>
                                 </div>
                             )}
                         </div>

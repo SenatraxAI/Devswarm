@@ -36,12 +36,13 @@ class FilesystemTool:
         
         return False
     
-    async def read_file(self, file_path: str) -> Dict[str, Any]:
+    async def read_file(self, file_path: Optional[str] = None, filename: Optional[str] = None) -> Dict[str, Any]:
         """
         Read file contents
         
         Args:
             file_path: Path to file
+            filename: Alias for file_path
             
         Returns:
             {
@@ -51,6 +52,12 @@ class FilesystemTool:
                 "size": int
             }
         """
+        # Handle alias
+        file_path = file_path or filename
+        
+        if not file_path:
+            return {"success": False, "error": "No file path provided"}
+
         if not self._is_path_allowed(file_path):
             return {
                 "success": False,
@@ -94,15 +101,17 @@ class FilesystemTool:
     
     async def write_file(
         self,
-        file_path: str,
-        content: str,
-        create_dirs: bool = True
+        file_path: Optional[str] = None,
+        content: str = "",
+        create_dirs: bool = True,
+        filename: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Write content to file
         
         Args:
             file_path: Path to file
+            filename: Alias for file_path
             content: Content to write
             create_dirs: Create parent directories if missing
             
@@ -112,6 +121,12 @@ class FilesystemTool:
                 "bytes_written": int
             }
         """
+        # Handle alias
+        file_path = file_path or filename
+        
+        if not file_path:
+            return {"success": False, "error": "No file path provided"}
+
         if not self._is_path_allowed(file_path):
             return {
                 "success": False,
@@ -146,14 +161,16 @@ class FilesystemTool:
     
     async def list_directory(
         self,
-        dir_path: str,
-        recursive: bool = False
+        dir_path: Optional[str] = None,
+        recursive: bool = False,
+        path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         List directory contents
         
         Args:
             dir_path: Directory path
+            path: Alias for dir_path
             recursive: Recursively list subdirectories
             
         Returns:
@@ -163,6 +180,12 @@ class FilesystemTool:
                 "directories": list
             }
         """
+        # Handle alias
+        dir_path = dir_path or path
+        
+        if not dir_path:
+            return {"success": False, "error": "No directory path provided"}
+
         if not self._is_path_allowed(dir_path):
             return {
                 "success": False,
@@ -215,15 +238,17 @@ class FilesystemTool:
     
     async def search_files(
         self,
-        dir_path: str,
-        pattern: str,
-        content_search: Optional[str] = None
+        dir_path: Optional[str] = None,
+        pattern: str = "*",
+        content_search: Optional[str] = None,
+        path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Search for files
         
         Args:
             dir_path: Directory to search
+            path: Alias for dir_path
             pattern: Filename pattern (glob)
             content_search: Optional text to search within files
             
@@ -233,6 +258,12 @@ class FilesystemTool:
                 "matches": list
             }
         """
+        # Handle alias
+        dir_path = dir_path or path
+        
+        if not dir_path:
+            return {"success": False, "error": "No directory path provided"}
+
         if not self._is_path_allowed(dir_path):
             return {
                 "success": False,
@@ -277,9 +308,21 @@ class FilesystemTool:
     
     async def create_directory(
         self,
-        dir_path: str
+        dir_path: Optional[str] = None,
+        path: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Create directory (including parents)"""
+        """Create directory (including parents)
+        
+        Args:
+            dir_path: Directory path
+            path: Alias for dir_path
+        """
+        # Handle alias
+        dir_path = dir_path or path
+        
+        if not dir_path:
+            return {"success": False, "error": "No directory path provided"}
+
         if not self._is_path_allowed(dir_path):
             return {
                 "success": False,

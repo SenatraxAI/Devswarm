@@ -50,9 +50,17 @@ class AgentCoordinator:
         from storage import EventLog
         event_log = EventLog(project_id=project_id)
         
+        # Initialize project metadata
+        from storage.project_metadata import ProjectMetadata
+        project_metadata = ProjectMetadata(project_id=project_id)
+        
         # Initialize team memory for this project
         from orchestration.team_memory import TeamMemory
         team_memory = TeamMemory(event_log)
+        
+        # Initialize summarizer
+        from storage.summarizer import EventSummarizer
+        summarizer = EventSummarizer(event_log, self.model_manager)
         
         # Import all personas
         from agents.personas import sarah_chen, marcus_williams, elena_rodriguez
@@ -70,7 +78,7 @@ class AgentCoordinator:
             ("oliver_hansen", "Oliver Hansen", "Coordinator", oliver_hansen),
         ]
         
-        project_agents = {}
+        session_agents = {}
         for agent_id, name, role, persona_module in persona_configs:
             system_prompt = getattr(persona_module, f"{agent_id.upper()}_SYSTEM_PROMPT")
             agent = Agent(
@@ -79,14 +87,38 @@ class AgentCoordinator:
                 role=role,
                 system_prompt=system_prompt,
                 model_manager=self.model_manager,
-                mcp_host=self.mcp_host,
                 event_log=event_log,
-                team_memory=team_memory
+                team_memory=team_memory,
+                summarizer=summarizer,
+                mcp_host=self.mcp_host
             )
-            project_agents[name] = agent
+            # Add project metadata to agent
+            agent.project_metadata = project_metadata
+            session_agents[name] = agent
             
-        self.project_sessions[project_id] = project_agents
-        return project_agents
+            # Configure Tool Permissions (Role-Based Access Control)
+            allowed_tools = []
+            if agent_id == "sarah_chen":
+                allowed_tools = ["web_search", "fs_read_file", "fs_write_file", "fs_list_directory", "github"]
+            elif agent_id == "marcus_williams":
+                allowed_tools = ["navigate_code", "search_docs"]
+            elif agent_id in ["james_okonkwo", "elena_rodriguez", "priya_sharma", "david_kim", "aisha_patel"]:
+                allowed_tools = ["fs_read_file", "fs_write_file", "fs_list_directory", "fs_search_files", "fs_create_directory", "lint_python", "run_tests", "navigate_code", "execute_command"]
+            elif agent_id == "oliver_hansen":
+                allowed_tools = ["fs_read_file", "fs_write_file", "generate_docs"]
+            
+            self.mcp_host.set_agent_permissions(name, allowed_tools)
+            
+        self.project_sessions[project_id] = session_agents
+        self.project_sessions[project_id] = session_agents
+        return session_agents
+
+    def get_project_events(self, project_id: str = "default", limit: int = 100) -> List[Dict[str, Any]]:
+        """Get recent events for a project to replay history"""
+        # Ensure event log exists
+        from storage.event_log import EventLog
+        event_log = EventLog(project_id=project_id)
+        return event_log.get_events(limit=limit)
 
     async def process_user_message(
         self, 
@@ -113,12 +145,37 @@ class AgentCoordinator:
         )
         
         # Check if this should trigger a debate
-        debate_trigger = self.debate_detector.detect_debate_trigger(message, agent="User")
-        
+        debate_trigger = self.debate_detector.detect_debate_trigger(message, "User")
         if debate_trigger:
             print(f"🗣️  Debate triggered: {debate_trigger['trigger'].value} on branch {branch_name}")
             routing_info["debate_trigger"] = debate_trigger
+            
+        # Check for identity updates (Simple heuristic for now)
+        # e.g. "My name is John" or "I am the CTO"
+        if "my name is " in message.lower():
+            name_part = message.lower().split("my name is ")[1].split(" ")[0].capitalize()
+            # Clean punctuation
+            name_part = "".join(c for c in name_part if c.isalnum())
+            if name_part:
+                self.project_sessions[project_id][list(self.project_sessions[project_id].keys())[0]].project_metadata.update(user_name=name_part)
+                print(f"🧠 Learned user name: {name_part}")
+                
+        if "i am the " in message.lower():
+            role_part = message.lower().split("i am the ")[1].split(".")[0].strip()
+            if role_part:
+                self.project_sessions[project_id][list(self.project_sessions[project_id].keys())[0]].project_metadata.update(user_role=role_part)
+                print(f"🧠 Learned user role: {role_part}")
         
+        # Log user message to event log for persistence
+        if self.event_log:
+            self.event_log.append_event(
+                event_type=EventType.USER_MESSAGE,
+                agent="User",
+                payload={"message": message},
+                branch_name=branch_name,
+                thread_id=thread_id
+            )
+
         # Notify mentioned agents
         if routing_info["should_notify"]:
             responses = await message_router.notify_mentioned_agents(

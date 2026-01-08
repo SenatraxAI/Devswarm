@@ -7,7 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 import os
+import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -120,6 +122,24 @@ async def websocket_endpoint(websocket: WebSocket):
             "project_id": project_id,
             "agents": [a.get_status() for a in agents.values()]
         })
+
+        # Replay recent history (last 50 events)
+        recent_events = coordinator.get_project_events(project_id, limit=50)
+        for event in recent_events:
+            # Map event log format to frontend message format
+            if event["type"] in ["USER_MESSAGE", "AGENT_MESSAGE_SENT", "AGENT_MENTION"]:
+                await websocket.send_json({
+                    "type": "agent_message",
+                    "data": {
+                        "agent": event["agent"],
+                        "message": event["payload"].get("message", ""),
+                        "messageType": "response", # Treating all history as "response" style for now
+                        "branch_name": event.get("branch_name", "main"),
+                        "thread_id": event.get("thread_id"),
+                        "timestamp": event["timestamp"],
+                        "project_id": project_id
+                    }
+                })
         
         while True:
             data = await websocket.receive_json()
@@ -135,6 +155,21 @@ async def websocket_endpoint(websocket: WebSocket):
             if msg_type == "user_message":
                 # Regular swarm message
                 message = data.get("message")
+                
+                # Echo message back to user for UI visibility
+                await websocket.send_json({
+                    "type": "agent_message",
+                    "data": {
+                        "agent": "User",
+                        "message": message,
+                        "messageType": "response",
+                        "branch_name": branch_name,
+                        "thread_id": thread_id,
+                        "timestamp": datetime.now().timestamp(),
+                        "project_id": project_id  # CRITICAL FIX: Frontend filters by this!
+                    }
+                })
+
                 await coordinator.process_user_message(
                     message, 
                     project_id=project_id,
@@ -159,6 +194,20 @@ async def websocket_endpoint(websocket: WebSocket):
                             thread_id=thread_id
                         )
                     )
+
+                    # Echo DM back to user for UI visibility
+                    await websocket.send_json({
+                        "type": "agent_message",
+                        "data": {
+                            "agent": "User",
+                            "message": message,
+                            "messageType": "response",
+                            "branch_name": branch_name,
+                            "thread_id": thread_id,
+                            "timestamp": datetime.now().timestamp(),
+                            "project_id": project_id # CRITICAL FIX
+                        }
+                    })
                     
     except Exception as e:
         print(f"❌ WebSocket error: {e}")

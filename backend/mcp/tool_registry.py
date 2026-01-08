@@ -32,6 +32,7 @@ class ToolRegistry:
     """
     Central registry for all MCP tools
     Total: 22 tools across 4 phases (P0-P3)
+    Maps tool names to (instance, method_name)
     """
     
     def __init__(self):
@@ -43,43 +44,81 @@ class ToolRegistry:
         
         print("🔧 Initializing Tool Registry...")
         
-        # Phase 3.1: Foundation Tools (P0) - 6 tools
-        self.tools['execute_command'] = CommandExecutor()
-        self.tools['lint_python'] = RuffLinter()
-        self.tools['filesystem'] = FilesystemTool()
-        self.tools['search_docs'] = Context7Client()
-        self.tools['github'] = GitHubClient()
-        print("  ✓ Foundation tools loaded (6)")
+        # Phase 3.1: Foundation Tools (P0)
+        cmd = CommandExecutor()
+        self.tools['execute_command'] = (cmd, "execute")
         
-        # Phase 3.2: Development Tools (P1) - 5 tools
-        self.tools['run_tests'] = TestExecutor()
-        self.tools['web_search'] = TavilySearch()
-        self.tools['manage_dependencies'] = DependencyManager()
-        self.tools['navigate_code'] = CodeNavigator()
-        self.tools['database'] = DatabaseTool()
-        print("  ✓ Development tools loaded (5)")
+        linter = RuffLinter()
+        self.tools['lint_python'] = (linter, "lint")
         
-        # Phase 3.3: Quality Tools (P2) - 5 tools
-        self.tools['scan_security'] = SecurityScanner()
-        self.tools['analyze_coverage'] = CoverageAnalyzer()
-        self.tools['generate_tests'] = TestGenerator()
-        self.tools['analyze_complexity'] = ComplexityAnalyzer()
-        self.tools['scan_dependencies'] = SnykScanner()
-        print("  ✓ Quality tools loaded (5)")
+        fs = FilesystemTool()
+        self.tools['fs_read_file'] = (fs, "read_file")
+        self.tools['fs_write_file'] = (fs, "write_file")
+        self.tools['fs_list_directory'] = (fs, "list_directory")
+        self.tools['fs_search_files'] = (fs, "search_files")
+        self.tools['fs_create_directory'] = (fs, "create_directory")
         
-        # Phase 3.4: Advanced Tools (P3) - 6 tools
-        self.tools['generate_docs'] = DocumentationGenerator()
-        self.tools['analyze_logs'] = LogAnalyzer()
-        self.tools['profile_performance'] = PerformanceProfiler()
-        self.tools['refactor_code'] = RefactoringEngine()
-        self.tools['generate_property_tests'] = PropertyTestingTool()
-        self.tools['detect_visual_regression'] = VisualRegressionDetector()
-        print("  ✓ Advanced tools loaded (6)")
+        c7 = Context7Client()
+        self.tools['search_docs'] = (c7, "search")
+        
+        gh = GitHubClient()
+        self.tools['github'] = (gh, "execute")
+        
+        # Phase 3.2: Development Tools (P1)
+        test_exec = TestExecutor()
+        self.tools['run_tests'] = (test_exec, "execute")
+        
+        tavily = TavilySearch()
+        self.tools['web_search'] = (tavily, "search")
+        
+        dep_mgr = DependencyManager()
+        self.tools['manage_dependencies'] = (dep_mgr, "execute")
+        
+        navigator = CodeNavigator()
+        self.tools['navigate_code'] = (navigator, "execute")
+        
+        db = DatabaseTool()
+        self.tools['database'] = (db, "execute")
+        
+        # Phase 3.3: Quality Tools (P2)
+        security = SecurityScanner()
+        self.tools['scan_security'] = (security, "execute")
+        
+        coverage = CoverageAnalyzer()
+        self.tools['analyze_coverage'] = (coverage, "execute")
+        
+        test_gen = TestGenerator()
+        self.tools['generate_tests'] = (test_gen, "execute")
+        
+        complexity = ComplexityAnalyzer()
+        self.tools['analyze_complexity'] = (complexity, "execute")
+        
+        snyk = SnykScanner()
+        self.tools['scan_dependencies'] = (snyk, "execute")
+        
+        # Phase 3.4: Advanced Tools (P3)
+        docs = DocumentationGenerator()
+        self.tools['generate_docs'] = (docs, "execute")
+        
+        logs = LogAnalyzer()
+        self.tools['analyze_logs'] = (logs, "execute")
+        
+        perf = PerformanceProfiler()
+        self.tools['profile_performance'] = (perf, "execute")
+        
+        refactor = RefactoringEngine()
+        self.tools['refactor_code'] = (refactor, "execute")
+        
+        prop_test = PropertyTestingTool()
+        self.tools['generate_property_tests'] = (prop_test, "execute")
+        
+        visual = VisualRegressionDetector()
+        self.tools['detect_visual_regression'] = (visual, "execute")
         
         print(f"✅ Tool Registry initialized: {len(self.tools)} tools ready")
     
     def get_tool(self, tool_name: str):
-        """Get tool instance by name"""
+        """Get tool (instance, method_name) by name"""
         return self.tools.get(tool_name)
     
     def get_all_tools(self):
@@ -89,27 +128,3 @@ class ToolRegistry:
     def list_tools(self) -> list:
         """List all tool names"""
         return list(self.tools.keys())
-    
-    def get_tools_by_category(self, category: str) -> list:
-        """Get tools by category (foundation, development, quality, advanced)"""
-        categories = {
-            "foundation": [
-                'execute_command', 'lint_python', 'filesystem',
-                'search_docs', 'github'
-            ],
-            "development": [
-                'run_tests', 'web_search', 'manage_dependencies',
-                'navigate_code', 'database'
-            ],
-            "quality": [
-                'scan_security', 'analyze_coverage', 'generate_tests',
-                'analyze_complexity', 'scan_dependencies'
-            ],
-            "advanced": [
-                'generate_docs', 'analyze_logs', 'profile_performance',
-                'refactor_code', 'generate_property_tests', 'detect_visual_regression'
-            ]
-        }
-        
-        tool_names = categories.get(category, [])
-        return {name: self.tools[name] for name in tool_names if name in self.tools}

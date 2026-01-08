@@ -53,9 +53,21 @@ class MessageRouter:
         if mentioned_agents:
             routing_info["should_notify"] = mentioned_agents
         elif sender == "User":
-            # User message with no mentions - route to PM by default
-            routing_info["should_notify"] = ["Sarah Chen"]
-            routing_info["routing_strategy"] = "default_pm"
+            # Check for implicit group addressing
+            # "guys", "team", "everyone", "y'all" -> Pivot to group mode
+            # For now, we simulate "Team" by notifying PM + Architect to simulate discussion
+            # In a full broadcast, we might wake 3-4 agents
+            lower_msg = message.lower()
+            group_triggers = ["guys", "team", "everyone", "y'all", "folks", "all"]
+            
+            if any(trigger in lower_msg.split() for trigger in group_triggers):
+                # Broadcast intent detected
+                routing_info["should_notify"] = ["Sarah Chen", "Marcus Williams"] # Start with core leadership
+                routing_info["routing_strategy"] = "group_broadcast"
+            else:
+                # User message with no mentions - route to PM by default
+                routing_info["should_notify"] = ["Sarah Chen"]
+                routing_info["routing_strategy"] = "default_pm"
         
         return routing_info
     

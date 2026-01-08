@@ -15,6 +15,11 @@ class TeamMemory:
     
     def __init__(self, event_log: EventLog):
         self.event_log = event_log
+        
+        # Initialize Vector Store if available
+        from storage.vector_store import VectorStore
+        # Use simple heuristic for project_id for now
+        self.vector_store = VectorStore(project_id=event_log.project_id)
     
     def query_team_decisions(self, limit: int = 10) -> List[Dict[str, Any]]:
         """
@@ -47,6 +52,21 @@ class TeamMemory:
         Returns:
             Most recent decision matching topic, or None
         """
+        # Try semantic search first
+        if self.vector_store:
+            results = self.vector_store.search(topic, k=3)
+            if results:
+                # Filter for decisions only (simple client-side filter for now)
+                # In robust implementation, we'd filter in the query
+                for res in results:
+                    if res.get("metadata", {}).get("type") == "team_decision":
+                        return {
+                            "decision": res["text"],
+                            "agent": res["metadata"].get("agent", "Unknown"),
+                            "score": res["score"]
+                        }
+        
+        # Fallback to simple keyword search
         decisions = self.event_log.get_events(
             event_type=EventType.TEAM_DECISION,
             limit=50  # Search last 50 decisions
@@ -171,16 +191,9 @@ class TeamMemory:
     ) -> str:
         """
         Record a team decision in the event log
-        
-        Args:
-            decision: What was decided
-            agent_name: Who made/recorded the decision
-            participants: Who was involved
-            
-        Returns:
-            Event ID
         """
-        return self.event_log.append_event(
+        # Record to event log
+        event_id = self.event_log.append_event(
             event_type=EventType.TEAM_DECISION,
             agent=agent_name,
             payload={
@@ -191,6 +204,72 @@ class TeamMemory:
                 "recorded_at": datetime.now().isoformat()
             }
         )
+        
+        # Vector store indexing is now handled via record_event
+        return event_id
+
+    def record_event(self, event_type: EventType, agent: str, payload: Dict[str, Any], metadata: Dict = None) -> str:
+        """
+        Record ANY event and automatically index it for RAG
+        """
+        event_id = self.event_log.append_event(
+            event_type=event_type,
+            agent=agent,
+            payload=payload,
+            metadata=metadata
+        )
+        
+        # Index in vector store automatically
+        if self.vector_store:
+            text_to_index = payload.get("message", payload.get("decision", str(payload)))
+            self.vector_store.add_text(
+                text=str(text_to_index),
+                meta={
+                    "type": event_type.value,
+                    "agent": agent,
+                    "event_id": event_id
+                }
+            )
+            
+        return event_id
+
+    def record_identity_anchor(self, agent_name: str, persona_prompt: str):
+        """
+        Record a persona update as a 'High-Priority Identity Anchor'
+        """
+        return self.record_event(
+            event_type=EventType.SUMMARY_GENERATED, # Using SUMMARY as a proxy for fixed "Identity"
+            agent="SYSTEM",
+            payload={
+                "message": f"IDENTITY ANCHOR for {agent_name}: {persona_prompt}",
+                "agent_target": agent_name
+            },
+            metadata={"is_identity_anchor": True}
+        )
+
+    def get_relevant_context(self, agent_name: str, query: str, k: int = 5) -> str:
+        """
+        Perform a semantic search to find the most relevant past context
+        """
+        if not self.vector_store:
+            return "Semantic search disabled."
+
+        # 1. Fetch relevant memories
+        results = self.vector_store.search(query, k=k)
+        if not results:
+            return "No relevant memories found."
+
+        # 2. Format context
+        context_lines = ["🔍 RELEVANT MEMORIES:"]
+        for res in results:
+            agent = res["metadata"].get("agent", "Unknown")
+            text = res["text"]
+            # Truncate for prompt efficiency
+            if len(text) > 300:
+                text = text[:300] + "..."
+            context_lines.append(f"  - [{agent}]: {text}")
+
+        return "\n".join(context_lines)
     
     def query_agent_mentions(self, agent_name: str, limit: int = 10) -> List[Dict[str, Any]]:
         """

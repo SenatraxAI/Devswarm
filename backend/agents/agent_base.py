@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import asyncio
 from storage.event_log import EventLog, EventType
+import re
+import ast
+import json
 
 
 @dataclass
@@ -52,7 +55,7 @@ class Agent:
     All 8 DevSwarm agents inherit from this
     """
     
-    def __init__(self, agent_id, name, role, system_prompt, model_manager, event_log=None, team_memory=None, mcp_host=None):
+    def __init__(self, agent_id, name, role, system_prompt, model_manager, event_log=None, team_memory=None, summarizer=None, mcp_host=None):
         """
         Initialize an agent with MCP tool access
         
@@ -64,6 +67,7 @@ class Agent:
             model_manager: Model manager instance
             event_log: Shared event log
             team_memory: Team memory instance
+            summarizer: Event summarizer instance
             mcp_host: MCP Host for tool access
         """
         self.id = agent_id
@@ -74,6 +78,7 @@ class Agent:
         self.sessions = {}
         self.event_log = event_log
         self.team_memory = team_memory
+        self.summarizer = summarizer
         self.mcp_host = mcp_host
         self.current_branch = "main" # Git-like branching support
         
@@ -98,21 +103,45 @@ class Agent:
             self.sessions[branch_name] = session
         return self.sessions[branch_name]
 
+    def reload_personality(self):
+        """
+        Reload the system prompt from the persona module.
+        Useful when persona files are updated during runtime.
+        """
+        try:
+            import importlib
+            # Dynamically import the personas package to get the module
+            persona_module_path = f"agents.personas.{self.id}"
+            module = importlib.import_module(persona_module_path)
+            # Re-import to catch file changes
+            importlib.reload(module)
+            
+            # Get the prompt variable
+            prompt_var = f"{self.id.upper()}_SYSTEM_PROMPT"
+            new_prompt = getattr(module, prompt_var, None)
+            
+            if new_prompt:
+                self.system_prompt = new_prompt
+                print(f"🔄 Reloaded personality for {self.name}")
+                
+                # RECORD IDENTITY ANCHOR in Event Store + Vector Store
+                if self.team_memory:
+                    self.team_memory.record_identity_anchor(self.name, self.system_prompt)
+                    
+                return True
+        except Exception as e:
+            print(f"❌ Failed to reload personality for {self.name}: {e}")
+        return False
+
     async def process_message(self, user_message: str, websocket=None, branch_name: str = "main", thread_id: Optional[str] = None) -> str:
         """
         Process a user message and generate response in a specific session
-        
-        Args:
-            user_message: Message from user or another agent
-            websocket: Optional WebSocket for streaming responses
-            branch_name: Current exploration branch
-            thread_id: Optional message threading ID
-            
-        Returns:
-            Agent's response
         """
         self.current_branch = branch_name
         session = self.get_session(branch_name)
+        
+        # Always try to reload personality before processing to catch updates
+        self.reload_personality()
         
         # Update status
         session.status = "thinking"
@@ -120,79 +149,113 @@ class Agent:
         # Add user message to session
         session.add_message("user", user_message)
         
-        # Build prompt from session + event log context
-        prompt = self._build_prompt(session)
-        
         # Generate response using model
         try:
-            response_parts = []
+            max_iterations = 10
+            iteration = 0
+            pending_message = ""
+            final_response = ""
             
-            # Stream tokens from model
-            async for token in self.model_manager.generate(
-                prompt=prompt,
-                system_prompt=self.system_prompt,
-                temperature=0.7,
-                max_tokens=1000,
-                stream=True
-            ):
-                response_parts.append(token)
+            while iteration < max_iterations:
+                iteration += 1
+                response_parts = []
                 
-                # Stream to WebSocket if available
-                if websocket:
+                # Build prompt from session + event log context
+                prompt = self._build_prompt(session)
+                
+                # Stream tokens from model
+                async for token in self.model_manager.generate(
+                    prompt=prompt,
+                    system_prompt=self.system_prompt,
+                    temperature=0.7,
+                    max_tokens=1000,
+                    stream=True
+                ):
+                    response_parts.append(token)
+                    
+                    # Stream to WebSocket if available
+                    if websocket:
+                        try:
+                            await websocket.send_json({
+                                "type": "agent_token",
+                                "data": {
+                                    "agent": self.name,
+                                    "token": token,
+                                    "branch_name": branch_name
+                                }
+                            })
+                        except:
+                            pass
+                
+                # Combine all tokens
+                full_response = "".join(response_parts)
+                
+                # Clean response for UI - Hardened logic to catch all tool tags
+                # Use sub with flags=re.IGNORECASE and handle multiple tags
+                clean_response = re.sub(r'<(?:tool_code|tool_call)>.*?</(?:tool_code|tool_call)>', '', full_response, flags=re.DOTALL | re.IGNORECASE)
+                # Catch unclosed tags at the end
+                clean_response = re.sub(r'<(?:tool_code|tool_call)>.*$', '', clean_response, flags=re.DOTALL | re.IGNORECASE).strip()
+                
+                # Add response to session memory
+                session.add_message("assistant", full_response)
+                
+                # CHECK FOR TOOL CALLS FIRST
+                tool_output = await self._process_tool_calls(full_response, session, websocket, branch_name, thread_id)
+                
+                # UI MESSAGE LOGIC:
+                should_send = False
+                if not tool_output:
+                    # Final response must always be sent
+                    should_send = True
+                elif clean_response and clean_response not in ["Working on it...", "On it.", "One moment."]:
+                    # Intermediate response with actual content
+                    # Only send if it's not a repeat of what we've already said this turn
+                    if clean_response != pending_message:
+                        should_send = True
+                
+                if websocket and clean_response and should_send:
                     try:
                         await websocket.send_json({
-                            "type": "agent_token",
+                            "type": "agent_message",
                             "data": {
                                 "agent": self.name,
-                                "token": token,
-                                "branch_name": branch_name
+                                "message": clean_response,
+                                "messageType": "response",
+                                "branch_name": branch_name,
+                                "thread_id": thread_id,
+                                "timestamp": datetime.now().timestamp()
                             }
                         })
+                        pending_message = clean_response
                     except:
-                        pass  # WebSocket might be closed
-            
-            # Combine all tokens
-            full_response = "".join(response_parts)
-            
-            # Add response to session
-            session.add_message("assistant", full_response)
-            session.status = "speaking"
-            
-            # Send final message over WebSocket
-            if websocket:
-                try:
-                    await websocket.send_json({
-                        "type": "agent_message",
-                        "data": {
-                            "agent": self.name,
-                            "message": full_response,
-                            "messageType": "response",
-                            "branch_name": branch_name,
-                            "thread_id": thread_id,
-                            "timestamp": datetime.now().timestamp()
-                        }
-                    })
-                except:
-                    pass
+                        pass
 
-            # Log event to event log
-            if self.event_log:
-                self.event_log.append_event(
-                    event_type=EventType.AGENT_MESSAGE_SENT,
-                    agent=self.name,
-                    payload={
-                        "message": full_response,
-                        "in_response_to": user_message
-                    },
-                    branch_name=branch_name,
-                    thread_id=thread_id,
-                    metadata={
-                        "tokens": len(response_parts),
-                        "model": "gemma3:4b"
-                    }
-                )
-            
-            return full_response
+                # If no tool call was found, we are done
+                if not tool_output:
+                    final_response = clean_response
+                    break
+                
+                # Log event for internal turn
+                if self.event_log:
+                    self.event_log.append_event(
+                        event_type=EventType.AGENT_MESSAGE_SENT,
+                        agent=self.name,
+                        payload={
+                            "message": full_response,
+                            "clean_message": clean_response,
+                            "iteration": iteration,
+                            "has_tool_call": True
+                        },
+                        branch_name=branch_name,
+                        thread_id=thread_id
+                    )
+
+                # If there was a tool call, update status and loop
+                session.status = "thinking"
+                await asyncio.sleep(0.5)
+
+            session.status = "idle"
+            return final_response or "Task processing complete."
             
         except Exception as e:
             session.status = "error"
@@ -200,38 +263,166 @@ class Agent:
             session.add_message("assistant", error_msg)
             return error_msg
         finally:
-            # Return to idle after a delay
-            await asyncio.sleep(0.1)
             session.status = "idle"
     
     def _build_prompt(self, session: AgentSession) -> str:
         """Build prompt from specific session messages with clear role markers"""
-        # Format messages for model
-        prompt_parts = []
         
-        # Add team memory context if available
-        if self.event_log:
-            from orchestration.team_memory import TeamMemory
-            team_memory = TeamMemory(self.event_log)
-            # Filter shared context by branch if possible/needed in future
-            shared_context = team_memory.get_shared_context(self.name, limit=10)
-            
+        # 1. BUILD SYSTEM INSTRUCTIONS & STYLE GUIDE
+        instructions = []
+        
+        # English enforcement - CRITICAL for 4B model
+        instructions.append("### CRITICAL: RESPOND ONLY IN ENGLISH. Never use Chinese or any other language.")
+
+        # Room/Project Context
+        if hasattr(self, "project_metadata"):
+            user_name = self.project_metadata.get("user_name", "Boss")
+            user_role = self.project_metadata.get("user_role", "Project Owner")
+            project_id = self.event_log.project_id if self.event_log else "DevSwarm"
+            instructions.append(f"📢 CONTEXT: You are working on '{project_id}' for {user_name} ({user_role}).")
+        else:
+            instructions.append("📢 CONTEXT: You are in the TEAM CHANNEL with your Boss.")
+
+        # Style Guide
+        instructions.append("""
+### STYLE GUIDE & ANTI-ROBOT RULES:
+1. **NO NAME PREFIXING**: NEVER start a message with your name or "ASSISTANT:". Just speak.
+2. **NATURAL SPEECH**: Use contractions ("I'm", "don't"). Avoid robotic AI fillers ("delve", "tapestry", "great question").
+3. **NO ECHOING**: Never repeat the user's request. Just act or answer.
+4. **ONE TURN ONLY**: Stop after your response. Do not hallucinate the user's next message.
+5. **LANGUAGE**: ALWAYS RESPOND IN ENGLISH.
+""")
+
+        # Tool Instructions
+        if self.mcp_host:
+            tools = self.mcp_host.get_available_tools(self.name)
+            if tools:
+                tool_list = "\n".join([f"- {t['name']}: {t['description']}" for t in tools])
+                instructions.append(f"""
+### AVAILABLE TOOLS:
+{tool_list}
+
+### TOOL PROTOCOL:
+To use a tool, you MUST output: <tool_code>tool_name(arg="value")</tool_code>
+Wait for the result. Do not guess what happens next.
+""")
+
+        # 2. BUILD CONVERSATION HISTORY
+        history_parts = []
+        
+        # Team Memory & Semantic RAG
+        if self.team_memory:
+            # Shared context (decisions, etc.)
+            shared_context = self.team_memory.get_shared_context(self.name, limit=5)
             if shared_context != "No shared context available.":
-                prompt_parts.append(f"TEAM CONTEXT:\n{shared_context}\n")
+                history_parts.append(f"### SHARED TEAM MEMORY\n{shared_context}\n")
+            
+            # Semantic search for relevant past context based on user query
+            user_messages = [m.content for m in session.messages if m.role == "user"]
+            if user_messages:
+                query = user_messages[-1]
+                semantic_context = self.team_memory.get_relevant_context(self.name, query, k=3)
+                if semantic_context != "No relevant memories found." and semantic_context != "Semantic search disabled.":
+                    history_parts.append(f"### LONG-TERM MEMORY (RELEVANT CONTEXT)\n{semantic_context}\n")
+
+        # Context Compression (Summaries)
+        if self.summarizer and len(session.messages) > 10:
+            # For long threads, provide a narrative summary of older context
+            # (In a full implementation, we'd fetch the latest summary event here)
+            summary_coverage = self.summarizer.get_summary_coverage()
+            if summary_coverage.get("summaries_count", 0) > 0:
+                # This is a placeholder for fetching the actual most recent summary
+                # For now, it signals that the architecture is ready for it
+                history_parts.append("### PREVIOUS EPIC SUMMARY: [Context optimized for token efficiency]\n")
         
-        for msg in session.get_recent_messages(20):
-            if msg.role == "system":
-                prompt_parts.append(f"SYSTEM INSTRUCTIONS: {msg.content}")
-            elif msg.role == "user":
-                # Mark USER messages clearly - this is the boss!
-                prompt_parts.append(f"👤 USER (Your Boss): {msg.content}")
-            elif msg.role == "assistant":
-                prompt_parts.append(f"{self.name}: {msg.content}")
+        # Current Thread
+        # Use a list of formatted strings to avoid any multi-line confusion
+        for msg in session.get_recent_messages(15):
+            role_marker = msg.role.upper()
+            content = msg.content.strip()
+            history_parts.append(f"{role_marker}: {content}")
         
-        # Add instruction about USER
-        prompt_parts.append("\nIMPORTANT: The USER is your boss. Respond to them professionally, clearly, and helpfully. They are directing this software project.")
+        # Final trigger
+        history_parts.append("ASSISTANT:")
         
-        return "\n\n".join(prompt_parts)
+        # 3. COMBINE EVERYTHING
+        system_block = "\n".join(instructions)
+        chat_block = "\n\n".join(history_parts)
+        
+        return f"{system_block}\n\n--- BEGIN CONVERSATION ---\n\n{chat_block}"
+
+    async def _process_tool_calls(
+        self, 
+        response_text: str, 
+        session: AgentSession,
+        websocket=None,
+        branch_name: str = "main", 
+        thread_id: str = None
+    ) -> Optional[str]:
+        """
+        Parse and execute tool calls from model output
+        Returns the tool result as a string if a tool was executed, else None
+        """
+        if not self.mcp_host:
+            return None
+
+        # Regex to find <tool_code>...</tool_code>
+        tool_pattern = re.compile(r'<tool_code>(.*?)</tool_code>', re.DOTALL)
+        match = tool_pattern.search(response_text)
+        
+        if not match:
+            return None
+        
+        tool_call_str = match.group(1).strip()
+        print(f"🛠️ Detected Tool Call: {tool_call_str}")
+        
+        try:
+            # Parse the function call string using AST
+            tree = ast.parse(tool_call_str)
+            expr = tree.body[0].value
+            
+            if not isinstance(expr, ast.Call):
+                return "Error: Invalid tool call syntax"
+                
+            tool_name = expr.func.id
+            
+            # Extract arguments
+            kwargs = {}
+            for keyword in expr.keywords:
+                # Handle primitive types
+                if isinstance(keyword.value, ast.Constant):
+                    kwargs[keyword.arg] = keyword.value.value
+                elif isinstance(keyword.value, ast.List):
+                    kwargs[keyword.arg] = [elt.value for elt in keyword.value.elts]
+            
+            # Notify UI via WebSocket
+            if websocket:
+                await websocket.send_json({
+                    "type": "agent_status",
+                    "data": {
+                        "agent": self.name,
+                        "status": f"Executing {tool_name}...",
+                        "project_id": self.event_log.project_id if self.event_log else "default"
+                    }
+                })
+            
+            # Execute Tool
+            session.status = "working"
+            result = await self.use_tool(tool_name, kwargs)
+            
+            # Format output
+            output_str = f"TOOL RESULT ({tool_name}):\n{json.dumps(result, indent=2)}"
+            
+            # Add to memory
+            session.add_message("system", output_str)
+            
+            return output_str
+            
+        except Exception as e:
+            error_msg = f"Tool execution error: {str(e)}"
+            print(f"❌ Tool Error: {error_msg}")
+            session.add_message("system", error_msg)
+            return error_msg
     
     async def use_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -19,7 +19,6 @@ class MCPHost:
     Manages server connections, tool registry, and access control
     """
     
-    
     def __init__(self):
         """Initialize MCP Host with tool registry, access control, and dynamic config"""
         print("🔧 Initializing MCP Host...")
@@ -37,13 +36,7 @@ class MCPHost:
         self.servers = {}
         self.is_initialized = True
         
-        # Log enabled MCP servers
-        enabled = self.mcp_config.get_enabled_servers()
-        if enabled:
-            print(f"📡 MCP Servers configured:")
-            for name, config in enabled.items():
-                print(f"  • {name}: {config.get('description', 'No description')}")
-        
+        # All tools from registry are considered "ready"
         print(f"✅ MCP Host initialized with {len(self.tool_registry.list_tools())} tools")
     
     async def connect_server(
@@ -52,87 +45,17 @@ class MCPHost:
         transport: TransportType,
         config: Dict[str, Any]
     ) -> bool:
-        """
-        Connect to an MCP server
-        
-        Args:
-            name: Server name (e.g., "filesystem", "github")
-            transport: Transport type (stdio or SSE)
-            config: Server-specific configuration
-            
-        Returns:
-            True if connection successful
-        """
-        try:
-            if transport == TransportType.STDIO:
-                server = await self._connect_stdio_server(name, config)
-            elif transport == TransportType.SSE:
-                server = await self._connect_sse_server(name, config)
-            else:
-                raise ValueError(f"Unknown transport: {transport}")
-            
-            # Register server
-            self.servers[name] = server
-            
-            # Discover and register tools
-            await self._register_server_tools(name, server)
-            
-            print(f"  ✓ {name} MCP server connected")
-            return True
-            
-        except Exception as e:
-            print(f"  ✗ Failed to connect {name}: {e}")
-            return False
-    
-    async def _connect_stdio_server(self, name: str, config: Dict) -> Any:
-        """Connect to local MCP server via stdio"""
-        # TODO: Implement stdio transport
-        raise NotImplementedError("Stdio transport not yet implemented")
-    
-    async def _connect_sse_server(self, name: str, config: Dict) -> Any:
-        """Connect to remote MCP server via SSE"""
-        # TODO: Implement SSE transport
-        raise NotImplementedError("SSE transport not yet implemented")
-    
-    async def _register_server_tools(self, server_name: str, server: Any):
-        """Discover and register tools from a server"""
-        # TODO: Query server for available tools
-        # TODO: Add to unified tool registry
-        pass
-    
-    def register_tool(
-        self,
-        tool_name: str,
-        tool_impl: Any,
-        schema: Dict[str, Any]
-    ):
-        """
-        Register a custom tool (not from MCP server)
-        
-        Args:
-            tool_name: Tool identifier
-            tool_impl: Tool implementation
-            schema: Tool schema (parameters, description)
-        """
-        self.tools[tool_name] = ("custom", tool_impl, schema)
-        print(f"  • Registered tool: {tool_name}")
+        """Connect to an MCP server (SSE/Stdio)"""
+        # TODO: Implement external MCP server connection logic
+        return False
     
     def set_agent_permissions(self, agent: str, allowed_tools: List[str]):
-        """
-        Configure which tools an agent can access
-        
-        Args:
-            agent: Agent name
-            allowed_tools: List of tool names agent can use
-        """
-        self.access_control[agent] = allowed_tools
+        """Configure tool access for an agent"""
+        self.access_control.set_permissions(agent, allowed_tools)
     
     def can_agent_use_tool(self, agent: str, tool_name: str) -> bool:
         """Check if agent has permission to use tool"""
-        if agent not in self.access_control:
-            return False  # No permissions configured
-        
-        return tool_name in self.access_control[agent]
+        return self.access_control.can_use_tool(agent, tool_name)
     
     async def execute_tool(
         self,
@@ -142,14 +65,6 @@ class MCPHost:
     ) -> Dict[str, Any]:
         """
         Execute a tool on behalf of an agent
-        
-        Args:
-            tool_name: Tool to execute
-            arguments: Tool arguments
-            agent: Agent requesting execution
-            
-        Returns:
-            Tool execution result
         """
         # Check permissions
         if not self.can_agent_use_tool(agent, tool_name):
@@ -158,8 +73,9 @@ class MCPHost:
                 "error": f"Agent {agent} not authorized to use {tool_name}"
             }
         
-        # Check tool exists
-        if tool_name not in self.tools:
+        # Check tool exists (look in tool registry first)
+        tool_data = self.tool_registry.get_tool(tool_name)
+        if not tool_data:
             return {
                 "success": False,
                 "error": f"Unknown tool: {tool_name}"
@@ -167,92 +83,63 @@ class MCPHost:
         
         # Execute tool
         try:
-            source, *tool_data = self.tools[tool_name]
+            tool_impl, method_name = tool_data
             
-            if source == "custom":
-                # Custom tool implementation
-                tool_impl, schema = tool_data
-                result = await self._execute_custom_tool(tool_impl, arguments)
-            else:
-                # MCP server tool
-                server = self.servers[source]
-                result = await self._execute_server_tool(server, tool_name, arguments)
+            # Fetch the method (e.g. search, execute, read_file)
+            method = getattr(tool_impl, method_name)
             
+            # Execute with unpacked dictionary arguments
+            result = await method(**arguments)
+            
+            # Return result wrapped in success status if not already
+            if isinstance(result, dict) and "success" in result:
+                return result
+                
             return {
                 "success": True,
                 "result": result
             }
             
         except Exception as e:
+            import traceback
+            print(f"❌ Tool Execution Error: {e}")
+            traceback.print_exc()
             return {
                 "success": False,
                 "error": str(e)
             }
     
-    async def _execute_custom_tool(self, tool_impl: Any, arguments: Dict) -> Any:
-        """Execute a custom tool"""
-        # TODO: Implement custom tool execution
-        return await tool_impl.execute(arguments)
-    
-    async def _execute_server_tool(
-        self,
-        server: Any,
-        tool_name: str,
-        arguments: Dict
-    ) -> Any:
-        """Execute a tool on an MCP server"""
-        # TODO: Implement server tool execution
-        raise NotImplementedError("Server tool execution not yet implemented")
-    
     def get_available_tools(self, agent: Optional[str] = None) -> List[Dict]:
-        """
-        Get list of available tools
-        
-        Args:
-            agent: If provided, filter to tools agent can access
-            
-        Returns:
-            List of tool descriptions
-        """
+        """Get tools available to an agent"""
         tools = []
+        all_tool_names = self.tool_registry.list_tools()
         
-        # Get all registered tools
-        all_tools = self.tool_registry.list_tools()
-        
-        for tool_name in all_tools:
-            # Check permissions if agent specified
+        for tool_name in all_tool_names:
             if agent and not self.access_control.can_use_tool(agent, tool_name):
                 continue
             
-            tool = self.tool_registry.get_tool(tool_name)
-            
-            tools.append({
-                "name": tool_name,
-                "description": getattr(tool, "description", f"Tool: {tool_name}")
-            })
+            tool_data = self.tool_registry.get_tool(tool_name)
+            if tool_data:
+                tool_impl, _ = tool_data
+                tools.append({
+                    "name": tool_name,
+                    "description": getattr(tool_impl, "description", f"Tool: {tool_name}")
+                })
         
         return tools
     
     def get_tool_schema(self, tool_name: str) -> Optional[Dict]:
         """Get schema for a specific tool"""
-        tool = self.tool_registry.get_tool(tool_name)
-        if not tool:
+        tool_data = self.tool_registry.get_tool(tool_name)
+        if not tool_data:
             return None
         
-        # Every tool class has a generic schema if not explicitly defined
-        # For now, return a placeholder or look for a schema attribute
-        if hasattr(tool, "SCHEMA"):
-            return tool.SCHEMA
+        tool_impl, _ = tool_data
+        if hasattr(tool_impl, "SCHEMA"):
+            return tool_impl.SCHEMA
             
-        return {"name": tool_name, "description": getattr(tool, "description", "")}
+        return {"name": tool_name, "description": getattr(tool_impl, "description", "")}
     
     async def shutdown(self):
-        """Shutdown all server connections"""
-        print("🛑 Shutting down MCP Host...")
-        
-        for name, server in self.servers.items():
-            # TODO: Gracefully disconnect servers
-            print(f"  ✓ Disconnected {name}")
-        
-        self.servers.clear()
+        """Shutdown connection"""
         self.is_initialized = False

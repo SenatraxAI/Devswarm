@@ -143,8 +143,10 @@ async def update_api_key(update: APIKeyUpdate):
                         key, value = line.split('=', 1)
                         env_vars[key.strip()] = value.strip()
         
-        # Update key
+        # Update key in env vars and current process
         env_vars[update.key_name] = update.value
+        import os
+        os.environ[update.key_name] = update.value
         
         # Write back
         with open(ENV_PATH, 'w') as f:
