@@ -81,12 +81,14 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
 
                 switch (data.type) {
                     case 'connection':
+                        console.log('🤝 CONNECTION EVENT:', data.agents?.length, 'agents');
                         if (data.agents) {
                             setAgents(data.agents);
                         }
                         break;
 
                     case 'agent_status':
+                        console.log('📊 AGENT STATUS:', data.data.agent, data.data.status);
                         setAgents((prev) => {
                             const existing = prev.find(a => a.name === data.data.agent);
                             if (existing) {
