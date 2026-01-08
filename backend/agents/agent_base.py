@@ -151,6 +151,12 @@ class Agent:
         
         # Generate response using model
         try:
+            print(f"\n{'='*60}")
+            print(f"🤖 AGENT PROCESSING: {self.name}")
+            print(f"   User message: {user_message[:100]}")
+            print(f"   Session history: {len(session.messages)} messages")
+            print(f"{'='*60}\n")
+            
             max_iterations = 10
             max_consecutive_failures = 3  # Stop after 3 failed tools in a row
             iteration = 0
@@ -160,6 +166,7 @@ class Agent:
             
             while iteration < max_iterations and consecutive_tool_failures < max_consecutive_failures:
                 iteration += 1
+                print(f"\n🔄 ITERATION {iteration}/{max_iterations}")
                 response_parts = []
                 
                 # Build prompt from session + event log context
@@ -191,18 +198,25 @@ class Agent:
                 
                 # Combine all tokens
                 full_response = "".join(response_parts)
+                print(f"📝 FULL RESPONSE ({len(full_response)} chars): {full_response[:200]}")
                 
                 # Clean response for UI - Hardened logic to catch all tool tags
                 # Use sub with flags=re.IGNORECASE and handle multiple tags
                 clean_response = re.sub(r'<(?:tool_code|tool_call)>.*?</(?:tool_code|tool_call)>', '', full_response, flags=re.DOTALL | re.IGNORECASE)
                 # Catch unclosed tags at the end
                 clean_response = re.sub(r'<(?:tool_code|tool_call)>.*$', '', clean_response, flags=re.DOTALL | re.IGNORECASE).strip()
+                print(f"✨ CLEAN RESPONSE: {clean_response[:200]}")
                 
                 # Add response to session memory
                 session.add_message("assistant", full_response)
                 
                 # CHECK FOR TOOL CALLS FIRST
+                print(f"🔍 Checking for tool calls...")
                 tool_output = await self._process_tool_calls(full_response, session, websocket, branch_name, thread_id)
+                if tool_output:
+                    print(f"🛠️ TOOL WAS EXECUTED: {tool_output[:100]}")
+                else:
+                    print(f"✅ NO TOOL CALL - Final response")
                 
                 # UI MESSAGE LOGIC:
                 should_send = False
