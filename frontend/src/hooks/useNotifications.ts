@@ -11,8 +11,8 @@ interface NotificationState {
     };
 }
 
-export function useNotifications() {
-    const { messages } = useWebSocket();
+export function useNotifications(projectId?: string) {
+    const { messages } = useWebSocket(undefined, projectId);
     const [notifications, setNotifications] = useState<NotificationState>({});
     const [activeContext, setActiveContext] = useState<string>('general');
 

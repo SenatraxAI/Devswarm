@@ -215,6 +215,18 @@ class Agent:
                 print(f"🔍 Checking for tool calls...")
                 tool_output = await self._process_tool_calls(full_response, session, websocket, branch_name, thread_id)
                 
+                # UI MESSAGE LOGIC:
+                should_send = False
+                if not tool_output:
+                    # Final response must always be sent
+                    should_send = True
+                elif clean_response and clean_response not in ["Working on it...", "On it.", "One moment."]:
+                    # Intermediate response with actual content - only send if new
+                    if clean_response != pending_message:
+                        should_send = True
+
+                print(f"📡 SENDING TO UI? {should_send} | Agent: {self.name} | Content: {clean_response[:50]}...")
+
                 if websocket and clean_response and should_send:
                     try:
                         await websocket.send_json({
@@ -229,8 +241,8 @@ class Agent:
                             }
                         })
                         pending_message = clean_response
-                    except:
-                        pass
+                    except Exception as e:
+                        print(f"❌ WS Send Error: {e}")
 
                 # --- LOOP DETECTION & BREAK LOGIC ---
                 if tool_output:

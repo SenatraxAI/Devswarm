@@ -31,7 +31,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
     const [viewMode, setViewMode] = useState<ViewMode>('chat');
     const [inputValue, setInputValue] = useState('');
     const [replyingTo, setReplyingTo] = useState<ReplyContext | null>(null);
-    const { messages, isConnected, sendMessage } = useWebSocket();
+    const { messages, isConnected, sendMessage } = useWebSocket(undefined, projectId);
 
     // Autocomplete State
     const [showMentions, setShowMentions] = useState(false);

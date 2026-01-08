@@ -15,14 +15,14 @@ interface UseWebSocketReturn {
     sendMessage: (message: any) => void;
 }
 
-export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
+export function useWebSocket(url: string = WS_URL, projectIdOverride?: string): UseWebSocketReturn {
     const [isConnected, setIsConnected] = useState(false);
     const [agents, setAgents] = useState<Agent[]>([]);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [terminalOutput, setTerminalOutput] = useState<TerminalOutput[]>([]);
     const [codeChanges, setCodeChanges] = useState<CodeChange[]>([]);
 
-    const [project_id, setProjectId] = useState<string | null>(null);
+    const [project_id, setProjectId] = useState<string | null>(projectIdOverride || null);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialMount = useRef(true);  // Track first load vs. project switch

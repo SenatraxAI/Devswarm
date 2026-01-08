@@ -15,7 +15,7 @@ function ChatContent() {
         activeContext,
         setActiveContext,
         markAsRead
-    } = useNotifications();
+    } = useNotifications(projectId);
 
     return (
         <div className="flex h-screen overflow-hidden bg-background transition-colors duration-500">
