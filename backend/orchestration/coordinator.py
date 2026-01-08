@@ -172,24 +172,29 @@ class AgentCoordinator:
             # Clean punctuation
             name_part = "".join(c for c in name_part if c.isalnum())
             if name_part:
-                self.project_sessions[project_id][list(self.project_sessions[project_id].keys())[0]].project_metadata.update(user_name=name_part)
+                # Get the first agent to access metadata (they all share the same instance)
+                first_agent = list(agents.values())[0]
+                first_agent.project_metadata.update(user_name=name_part)
                 print(f"🧠 Learned user name: {name_part}")
                 
         if "i am the " in message.lower():
             role_part = message.lower().split("i am the ")[1].split(".")[0].strip()
             if role_part:
-                self.project_sessions[project_id][list(self.project_sessions[project_id].keys())[0]].project_metadata.update(user_role=role_part)
+                first_agent = list(agents.values())[0]
+                first_agent.project_metadata.update(user_role=role_part)
                 print(f"🧠 Learned user role: {role_part}")
         
         # Log user message to event log for persistence
-        if self.event_log:
-            self.event_log.append_event(
-                event_type=EventType.USER_MESSAGE,
-                agent="User",
-                payload={"message": message},
-                branch_name=branch_name,
-                thread_id=thread_id
-            )
+        from storage.event_log import EventLog
+        event_log = EventLog(project_id=project_id)
+        
+        event_log.append_event(
+            event_type=EventType.USER_MESSAGE,
+            agent="User",
+            payload={"message": message},
+            branch_name=branch_name,
+            thread_id=thread_id
+        )
 
         # Notify mentioned agents
         if routing_info["should_notify"]:
