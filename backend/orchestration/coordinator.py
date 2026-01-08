@@ -200,7 +200,7 @@ class AgentCoordinator:
         if routing_info["should_notify"]:
             responses = await message_router.notify_mentioned_agents(
                 message,
-                routing_info["mentioned_agents"],
+                routing_info["should_notify"],  # FIX: Use should_notify, not mentioned_agents
                 sender="User",
                 project_id=project_id,
                 branch_name=branch_name,
