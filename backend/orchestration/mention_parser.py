@@ -3,7 +3,7 @@ Message parsing utilities for @mentions
 Handles parsing and extracting agent mentions from messages
 """
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 
 class MentionParser:
