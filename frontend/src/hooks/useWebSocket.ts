@@ -25,6 +25,7 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
     const [project_id, setProjectId] = useState<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+    const isInitialMount = useRef(true);  // Track first load vs. project switch
 
     // Detect project changes from localStorage
     useEffect(() => {
