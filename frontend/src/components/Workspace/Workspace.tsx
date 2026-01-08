@@ -290,23 +290,23 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
             </div>
 
             {/* Input Area Overlay */}
-            <div className="p-6 border-t border-surface-light bg-surface/50 backdrop-blur-md relative z-10">
+            <div className="p-6 border-t border-surface-light bg-surface relative z-10">
                 {/* Autocomplete Menu */}
                 {showMentions && filteredSuggestions.length > 0 && (
-                    <div className="absolute bottom-full left-12 mb-2 w-72 bg-surface/95 backdrop-blur-2xl border border-surface-light rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in slide-in-from-bottom-4 duration-200">
-                        <div className="p-3 border-b border-surface-light flex items-center justify-between bg-white/5">
+                    <div className="absolute bottom-full left-12 mb-2 w-72 bg-surface border border-surface-light rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in slide-in-from-bottom-4 duration-200">
+                        <div className="p-3 border-b border-surface-light flex items-center justify-between bg-surface-light">
                             <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Mention Agent</span>
                             <div className="flex space-x-2">
-                                <span className="text-[10px] font-mono text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">↑↓</span>
-                                <span className="text-[10px] font-mono text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">ENTER</span>
+                                <span className="text-[10px] font-mono text-gray-500 bg-background px-1.5 py-0.5 rounded border border-surface-light">↑↓</span>
+                                <span className="text-[10px] font-mono text-gray-500 bg-background px-1.5 py-0.5 rounded border border-surface-light">ENTER</span>
                             </div>
                         </div>
-                        <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                        <div className="max-h-80 overflow-y-auto custom-scrollbar bg-surface">
                             {filteredSuggestions.map((s, i) => (
                                 <button
                                     key={s.id}
                                     onClick={() => selectMention(s)}
-                                    className={`w-full flex items-center p-4 text-left transition-all ${i === mentionIndex ? 'bg-accent-primary/20 border-l-4 border-accent-primary' : 'hover:bg-white/5'}`}
+                                    className={`w-full flex items-center p-4 text-left transition-all ${i === mentionIndex ? 'bg-accent-primary/20 border-l-4 border-accent-primary' : 'hover:bg-surface-light'}`}
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-background border border-surface-light flex items-center justify-center text-xs font-black text-gray-300 shrink-0 uppercase mr-4 shadow-inner">
                                         {s.name[0]}
@@ -323,7 +323,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                 )}
 
                 {replyingTo && (
-                    <div className="mb-4 flex items-center justify-between bg-accent-primary/5 border-l-4 border-accent-primary rounded-xl p-4 animate-in slide-in-from-bottom-2 shadow-xl backdrop-blur-sm border border-accent-primary/10">
+                    <div className="mb-4 flex items-center justify-between bg-accent-primary/10 border-l-4 border-accent-primary rounded-xl p-4 animate-in slide-in-from-bottom-2 shadow-xl border border-accent-primary/20">
                         <div className="overflow-hidden flex-1 mr-4">
                             <div className="text-[10px] font-black uppercase tracking-widest text-accent-primary mb-1">Replying to {replyingTo.agent}</div>
                             <div className="text-xs text-gray-300 truncate opacity-70 italic">"{replyingTo.message}"</div>
@@ -344,7 +344,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                         onKeyDown={handleKeyDown}
                         autoComplete="off"
                         placeholder={activeContext === 'general' ? `Message the swarm | Type @ for agents...` : `Send a private message to ${activeContext.replace('dm-', '')}...`}
-                        className="w-full bg-background/80 border border-surface-light p-4 pl-14 rounded-2xl text-sm focus:outline-none focus:border-accent-primary/50 focus:ring-4 focus:ring-accent-primary/5 transition-all text-gray-200 shadow-2xl placeholder:text-gray-600 font-outfit"
+                        className="w-full bg-background border border-surface-light p-4 pl-14 rounded-2xl text-sm focus:outline-none focus:border-accent-primary/50 focus:ring-4 focus:ring-accent-primary/5 transition-all text-gray-200 shadow-2xl placeholder:text-gray-600 font-outfit"
                     />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
                         <div className="w-7 h-7 rounded-lg bg-surface-light flex items-center justify-center text-gray-500 group-focus-within:text-accent-primary group-focus-within:bg-accent-primary/10 transition-all border border-transparent group-focus-within:border-accent-primary/20">
@@ -354,7 +354,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-3">
                         <div className="hidden sm:flex items-center space-x-1 opacity-20 group-hover:opacity-100 transition-opacity">
                             <kbd className="text-[9px] font-black text-gray-400 bg-surface-light px-1.5 py-0.5 rounded border border-surface-light">ENTER</kbd>
-                            <span className="text-[10px] text-gray-600">to send</span>
+                            <span className="text-[10px] text-gray-600 font-black uppercase tracking-tighter">to send</span>
                         </div>
                         <button
                             onClick={handleSendMessage}
