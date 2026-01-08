@@ -413,26 +413,32 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
             # Extract arguments (both positional and keyword)
             kwargs = {}
             
-            # Handle positional arguments
-            # Map them to expected parameter names based on common patterns
-            param_name_map = {
-                'execute_command': 'command',
-                'fs_read_file': 'path',
-                'fs_write_file': 'path',
-                'fs_list_directory': 'path',
-                'navigate_code': 'dir_path',
-                'search_docs': 'query',
-                'web_search': 'query',
+            # Handle positional arguments with proper multi-param support
+            multi_param_map = {
+                'fs_write_file': ['path', 'content'],
+                'fs_create_directory': ['path'],
+                'execute_command': ['command'],
+                'fs_read_file': ['path'],
+                'fs_list_directory': ['path'],
+                'navigate_code': ['dir_path'],
+                'search_docs': ['query'],
+                'web_search': ['query'],
             }
             
             if expr.args and len(expr.args) > 0:
-                # Get the first positional arg
-                first_arg = expr.args[0]
-                if isinstance(first_arg, ast.Constant):
-                    param_name = param_name_map.get(tool_name, 'value')
-                    kwargs[param_name] = first_arg.value
+                param_names = multi_param_map.get(tool_name, ['value'])
+                
+                for i, arg in enumerate(expr.args):
+                    if i < len(param_names):
+                        if isinstance(arg, ast.Constant):
+                            kwargs[param_names[i]] = arg.value
+                        elif isinstance(arg, ast.Name):
+                            # Handle variable references (fallback to string name)
+                            kwargs[param_names[i]] = arg.id
+                        elif isinstance(arg, ast.Str):  # Python 3.7 compatibility
+                            kwargs[param_names[i]] = arg.s
             
-            # Extract keyword arguments
+            # Extract keyword arguments (these override positional)
             for keyword in expr.keywords:
                 # Handle primitive types
                 if isinstance(keyword.value, ast.Constant):

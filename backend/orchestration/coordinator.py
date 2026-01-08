@@ -125,7 +125,6 @@ class AgentCoordinator:
             self.mcp_host.set_agent_permissions(name, allowed_tools)
             
         self.project_sessions[project_id] = session_agents
-        self.project_sessions[project_id] = session_agents
         return session_agents
 
     def get_project_events(self, project_id: str = "default", limit: int = 100) -> List[Dict[str, Any]]:
