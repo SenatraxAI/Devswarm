@@ -314,6 +314,21 @@ class Agent:
 ### TOOL PROTOCOL:
 To use a tool, you MUST output: <tool_code>tool_name(arg="value")</tool_code>
 Wait for the result. Do not guess what happens next.
+
+### CRITICAL: WHEN TO USE TOOLS
+ONLY use tools when you NEED to:
+- Analyze actual code files (navigate_code, fs_read_file)
+- Search documentation (search_docs, web_search)
+- Run tests or commands (run_tests, execute_command)
+- Modify files (fs_write_file)
+
+DO NOT use tools for:
+- Greetings ("hi", "hello")
+- General questions ("what should we do?", "how's it going?")
+- Casual conversation
+- Status updates
+
+If the user just wants to chat, CHAT. Tools are for work, not politeness.
 """)
 
         # 2. BUILD CONVERSATION HISTORY
