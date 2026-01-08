@@ -277,26 +277,30 @@ class Agent:
         # Room/Project Context
         if hasattr(self, "project_metadata"):
             user_name = self.project_metadata.get("user_name", "Boss")
-            user_role = self.project_metadata.get("user_role", "Project Owner")
-            user_company = self.project_metadata.get("user_company", "DevSwarm AI")
-            project_name = self.project_metadata.get("project_name", "DevSwarm")
+            project_name = self.project_metadata.get("project_name", "this project")
             
-            context_msg = f"📢 CONTEXT: Project '{project_name}' for {user_name} ({user_role})"
-            if user_company:
-                context_msg += f" @ {user_company}"
-            instructions.append(context_msg + ".")
+            # Keep it simple and natural
+            instructions.append(f"You're working on '{project_name}' with {user_name}.")
         else:
-            instructions.append("📢 CONTEXT: You are in the TEAM CHANNEL with your Boss.")
+            instructions.append("You're in a team workspace.")
 
-        # Style Guide
+        # Style Guide - MUCH STRICTER
         instructions.append("""
-### STYLE GUIDE & ANTI-ROBOT RULES:
-1. **NO NAME PREFIXING**: NEVER start a message with your name or "ASSISTANT:". Just speak.
-2. **NATURAL SPEECH**: Use contractions ("I'm", "don't"). Avoid robotic AI fillers ("delve", "tapestry", "great question").
-3. **NO ECHOING**: Never repeat the user's request. Just act or answer.
-4. **ONE TURN ONLY**: Stop after your response. Do not hallucinate the user's next message.
-5. **LANGUAGE**: ALWAYS RESPOND IN ENGLISH.
+### CRITICAL OUTPUT RULES:
+1. NO META-COMMENTARY: Never analyze "the conversation", "the approach", or "the overall situation". Just help directly.
+2. NO FORMAL HEADERS: BANNED phrases include:
+   - "Observations and Key Points"
+   - "Consistent Ruleset"
+   - "Improvements and Considerations"
+   - "Thinking:" / "Refinement:" / "Overall:"
+   - ANY use of ** around headers or section titles
+3. NO NAME PREFIX: Never start with your name (e.g., "Sarah Chen:"). Just speak.
+4. NATURAL TONE: Use contractions ("I'm", "let's", "don't"). Sound like a real person.
+5. NO ECHOING: Don't repeat the user's question back. Just answer or act.
+6. SHORT & DIRECT: Get to the point. One or two paragraphs MAX unless writing code.
+7. NO HALLUCINATING: Stop after your response. Don't invent what the user says next.
 """)
+
 
         # Tool Instructions
         if self.mcp_host:

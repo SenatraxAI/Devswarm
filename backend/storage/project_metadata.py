@@ -34,13 +34,16 @@ class ProjectMetadata:
         global_config = UserConfig().get_all()
         
         # Merge: Project specific > Global defaults > Hardcoded defaults
+        # Use folder name as project name if no explicit name is set
+        folder_name = Path(project_data.get("root_path", os.getcwd())).name
+        
         return {
             "project_id": self.project_id,
-            "project_name": project_data.get("project_name", self.project_id),
+            "project_name": project_data.get("project_name", folder_name),  # Use folder name
             "root_path": project_data.get("root_path", os.getcwd()),
             "user_name": project_data.get("user_name", global_config.get("name", "Boss")),
             "user_role": project_data.get("user_role", global_config.get("role", "Lead Developer")),
-            "user_company": project_data.get("user_company", global_config.get("company", "DevSwarm AI")),
+            "user_company": project_data.get("user_company", global_config.get("company", "")),  # Empty default
             "goals": project_data.get("goals", []),
             **{k: v for k, v in project_data.items() if k not in ["project_id", "project_name", "root_path", "user_name", "user_role", "user_company", "goals"]}
         }

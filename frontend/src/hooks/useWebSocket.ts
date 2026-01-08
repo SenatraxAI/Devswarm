@@ -31,13 +31,19 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
         const checkProject = () => {
             const id = localStorage.getItem('active_project_id') || 'default';
             if (id !== project_id) {
-                setProjectId(id);
-                // Clear state on project switch to prevent context leakage
+                // Clear all state for the old project
                 setMessages([]);
                 setTerminalOutput([]);
                 setCodeChanges([]);
-                // Reconnect with new context
-                if (wsRef.current) wsRef.current.close();
+                setAgents([]);
+
+                // Update to new project ID
+                setProjectId(id);
+
+                // Close connection to trigger reconnect with new project
+                if (wsRef.current) {
+                    wsRef.current.close();
+                }
             }
         };
 
