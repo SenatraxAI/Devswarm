@@ -278,9 +278,12 @@ class Agent:
         if hasattr(self, "project_metadata"):
             user_name = self.project_metadata.get("user_name", "Boss")
             project_name = self.project_metadata.get("project_name", "this project")
+            root_path = getattr(self, "root_path", "unknown")
             
             # Keep it simple and natural
             instructions.append(f"You're working on '{project_name}' with {user_name}.")
+            instructions.append(f"Project root: `{root_path}`")
+            instructions.append(f"OS: Windows (use backslashes for paths, e.g. `backend\\agents\\agent_base.py`)")
         else:
             instructions.append("You're in a team workspace.")
 
@@ -439,12 +442,23 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
                             kwargs[param_names[i]] = arg.s
             
             # Extract keyword arguments (these override positional)
+            # Also remap keyword names to match tool signatures
+            keyword_remap = {
+                'navigate_code': {'path': 'dir_path'},  # path -> dir_path
+                'search_docs': {},
+            }
+            
             for keyword in expr.keywords:
+                # Get the target parameter name (remap if needed)
+                arg_name = keyword.arg
+                if tool_name in keyword_remap and arg_name in keyword_remap[tool_name]:
+                    arg_name = keyword_remap[tool_name][arg_name]
+                
                 # Handle primitive types
                 if isinstance(keyword.value, ast.Constant):
-                    kwargs[keyword.arg] = keyword.value.value
+                    kwargs[arg_name] = keyword.value.value
                 elif isinstance(keyword.value, ast.List):
-                    kwargs[keyword.arg] = [elt.value for elt in keyword.value.elts]
+                    kwargs[arg_name] = [elt.value for elt in keyword.value.elts]
             
             # Notify UI via WebSocket
             if websocket:
