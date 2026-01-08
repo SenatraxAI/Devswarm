@@ -152,11 +152,13 @@ class Agent:
         # Generate response using model
         try:
             max_iterations = 10
+            max_consecutive_failures = 3  # Stop after 3 failed tools in a row
             iteration = 0
+            consecutive_tool_failures = 0
             pending_message = ""
             final_response = ""
             
-            while iteration < max_iterations:
+            while iteration < max_iterations and consecutive_tool_failures < max_consecutive_failures:
                 iteration += 1
                 response_parts = []
                 
@@ -233,7 +235,19 @@ class Agent:
                 # If no tool call was found, we are done
                 if not tool_output:
                     final_response = clean_response
+                    consecutive_tool_failures = 0  # Reset on successful no-tool completion
                     break
+                
+                # Check if tool execution failed
+                if tool_output and ("error" in tool_output.lower() or "failed" in tool_output.lower()):
+                    consecutive_tool_failures += 1
+                    print(f"⚠️ Tool failure {consecutive_tool_failures}/{max_consecutive_failures}")
+                    if consecutive_tool_failures >= max_consecutive_failures:
+                        print(f"🛑 Stopping after {consecutive_tool_failures} consecutive tool failures")
+                        final_response = "I'm experiencing technical difficulties with my tools. Let me try a different approach or you can try again later."
+                        break
+                else:
+                    consecutive_tool_failures = 0  # Reset on successful tool use
                 
                 # Log event for internal turn
                 if self.event_log:
