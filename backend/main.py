@@ -144,6 +144,10 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_json()
             
+            print(f"\n📨 RECEIVED MESSAGE:")
+            print(f"   Type: {data.get('type')}")
+            print(f"   Data: {json.dumps(data, indent=2)[:500]}")
+            
             # Update project context if provided
             if "project_id" in data:
                 project_id = data["project_id"]

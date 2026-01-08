@@ -111,6 +111,7 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
                         break;
 
                     case 'agent_message':
+                        console.log('💬 ADDING AGENT MESSAGE TO STATE:', data.data);
                         setMessages((prev) => [...prev, data.data]);
                         // Clear the streaming preview once full message arrives
                         setAgents((prev) => {
