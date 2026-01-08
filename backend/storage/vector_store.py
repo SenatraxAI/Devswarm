@@ -64,7 +64,7 @@ class VectorStore:
                         raise model_error[0]
                     self.model = model_result[0]
                     print("✅ Embedding model loaded")
-                   self._load_index()
+                    self._load_index()
                 else:
                     print("⚠️ Model download timed out after 30s. Disabling RAG.")
                     self.HAS_DEPS = False
