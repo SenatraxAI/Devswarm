@@ -59,7 +59,7 @@ class ToolRegistry:
         self.tools['fs_create_directory'] = (fs, "create_directory")
         
         c7 = Context7Client()
-        self.tools['search_docs'] = (c7, "search")
+        self.tools['search_docs'] = (c7, "search_docs")  # FIX: Use correct method name
         
         gh = GitHubClient()
         self.tools['github'] = (gh, "execute")
@@ -75,7 +75,7 @@ class ToolRegistry:
         self.tools['manage_dependencies'] = (dep_mgr, "execute")
         
         navigator = CodeNavigator()
-        self.tools['navigate_code'] = (navigator, "execute")
+        self.tools['navigate_code'] = (navigator, "get_project_structure")  # FIX: Use actual method
         
         db = DatabaseTool()
         self.tools['database'] = (db, "execute")
