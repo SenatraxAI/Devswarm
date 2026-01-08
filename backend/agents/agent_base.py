@@ -410,8 +410,29 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
                 
             tool_name = expr.func.id
             
-            # Extract arguments
+            # Extract arguments (both positional and keyword)
             kwargs = {}
+            
+            # Handle positional arguments
+            # Map them to expected parameter names based on common patterns
+            param_name_map = {
+                'execute_command': 'command',
+                'fs_read_file': 'path',
+                'fs_write_file': 'path',
+                'fs_list_directory': 'path',
+                'navigate_code': 'dir_path',
+                'search_docs': 'query',
+                'web_search': 'query',
+            }
+            
+            if expr.args and len(expr.args) > 0:
+                # Get the first positional arg
+                first_arg = expr.args[0]
+                if isinstance(first_arg, ast.Constant):
+                    param_name = param_name_map.get(tool_name, 'value')
+                    kwargs[param_name] = first_arg.value
+            
+            # Extract keyword arguments
             for keyword in expr.keywords:
                 # Handle primitive types
                 if isinstance(keyword.value, ast.Constant):
