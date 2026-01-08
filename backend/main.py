@@ -109,14 +109,15 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"   Client: {websocket.client}")
         
         # Get team for this project
-        agents = await coordinator.get_or_create_agents(project_id)
+        # get_agents is a synchronous method in coordinator.py
+        agents = coordinator.get_agents(project_id)
         
         # 1. Send initial connection success with current agent statuses
         await websocket.send_json({
             "type": "connection",
             "status": "connected",
             "project_id": project_id,
-            "agents": [a.to_dict() for a in agents.values()]
+            "agents": [a.get_status() for a in agents.values()]
         })
 
         # 2. Replay recent history (briefly to avoid overwhelming)
@@ -152,7 +153,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if current_project != project_id:
                 print(f"🔄 Switched context from {project_id} to {current_project}")
                 project_id = current_project
-                agents = await coordinator.get_or_create_agents(project_id)
+                agents = coordinator.get_agents(project_id)
             
             branch_name = data.get("branch_name", "main")
             thread_id = data.get("thread_id")
