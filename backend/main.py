@@ -123,8 +123,8 @@ async def websocket_endpoint(websocket: WebSocket):
             "agents": [a.get_status() for a in agents.values()]
         })
 
-        # Replay recent history (last 50 events)
-        recent_events = coordinator.get_project_events(project_id, limit=50)
+        # Replay full history (up to 1000 messages for performance)
+        recent_events = coordinator.get_project_events(project_id, limit=1000)
         for event in recent_events:
             # Map event log format to frontend message format
             if event["type"] in ["USER_MESSAGE", "AGENT_MESSAGE_SENT", "AGENT_MENTION"]:
