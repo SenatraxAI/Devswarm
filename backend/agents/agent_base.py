@@ -490,7 +490,13 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
             result = await self.use_tool(tool_name, kwargs)
             
             # Format output
-            output_str = f"TOOL RESULT ({tool_name}):\n{json.dumps(result, indent=2)}"
+            # Format as clean, readable text (NOT raw JSON!)
+            if isinstance(result, dict) and result.get("status") == "success":
+                output_str = f"Tool '{tool_name}' completed successfully."
+            elif isinstance(result, dict) and result.get("status") == "error":
+                output_str = f"Tool '{tool_name}' failed: {result.get('error', 'Unknown error')}"
+            else:
+                output_str = f"Tool '{tool_name}' executed. Result: {str(result)[:200]}"
             
             # Add to memory
             session.add_message("system", output_str)
