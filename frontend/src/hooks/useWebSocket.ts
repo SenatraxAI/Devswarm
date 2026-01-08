@@ -39,12 +39,22 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
                     setCodeChanges([]);
                     setAgents([]);
                 }
-            };
+                isInitialMount.current = false;
 
-            checkProject();
-            const interval = setInterval(checkProject, 1000); // Poll for changes
-            return () => clearInterval(interval);
-        }, [project_id]);
+                // Update to new project ID
+                setProjectId(id);
+
+                // Close connection to trigger reconnect with new project
+                if (wsRef.current) {
+                    wsRef.current.close();
+                }
+            }
+        };
+
+        checkProject();
+        const interval = setInterval(checkProject, 1000); // Poll for changes
+        return () => clearInterval(interval);
+    }, [project_id]);
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
