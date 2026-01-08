@@ -61,10 +61,11 @@ class MCPHost:
         self,
         tool_name: str,
         arguments: Dict[str, Any],
-        agent: str
+        agent: str,
+        context: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Execute a tool on behalf of an agent
+        Execute a tool on behalf of an agent with optional project context
         """
         # Check permissions
         if not self.can_agent_use_tool(agent, tool_name):
@@ -84,6 +85,10 @@ class MCPHost:
         # Execute tool
         try:
             tool_impl, method_name = tool_data
+            
+            # Apply context if provided (e.g. root_path for filesystem)
+            if context and hasattr(tool_impl, "set_context"):
+                tool_impl.set_context(**context)
             
             # Fetch the method (e.g. search, execute, read_file)
             method = getattr(tool_impl, method_name)

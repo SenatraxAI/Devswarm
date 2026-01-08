@@ -1,0 +1,5 @@
+Updated: Key prompt engineering best practices:
+- Be specific and clear with instructions.
+- Iteratively test and refine prompts.
+- Avoid providing PII to the model.
+- Schedule a 15-minute sync with John to review these findings.

@@ -1,0 +1,5 @@
+Summary of Prompt Engineering Best Practices:
+
+*   **Specificity:** Provide clear, detailed instructions to guide the LLM.
+*   **Iteration:** Continuously test and refine prompts for optimal results.
+*   **Data Privacy:** Avoid including PII in prompts to safeguard sensitive information.

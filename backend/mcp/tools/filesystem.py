@@ -24,6 +24,11 @@ class FilesystemTool:
         """
         self.allowed_paths = allowed_paths or [os.getcwd()]
         self.operation_history = []
+
+    def set_context(self, root_path: Optional[str] = None, **kwargs):
+        """Update allowed paths based on project context"""
+        if root_path:
+            self.allowed_paths = [root_path]
     
     def _is_path_allowed(self, path: str) -> bool:
         """Check if path is within allowed boundaries"""

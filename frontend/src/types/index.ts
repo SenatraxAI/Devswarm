@@ -1,6 +1,6 @@
-"""
-Type definitions for DevSwarm shared between frontend and backend
-"""
+/**
+ * Type definitions for DevSwarm shared between frontend and backend
+ */
 
 // Agent Types
 export type AgentRole =
@@ -13,7 +13,7 @@ export type AgentRole =
     | 'QA'
     | 'Coordinator';
 
-export type AgentStatus = 'idle' | 'thinking' | 'speaking' | 'error';
+export type AgentStatus = 'idle' | 'thinking' | 'speaking' | 'error' | 'working' | string;
 
 export interface Agent {
     name: string;
@@ -33,6 +33,8 @@ export interface AgentMessage {
     messageType: MessageType;
     timestamp: number;
     inReplyTo?: string;
+    thread_id?: string;
+    branch_name?: string;
 }
 
 // Terminal Types

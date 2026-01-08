@@ -17,16 +17,16 @@ export function Terminal({ projectId }: TerminalProps) {
     }, [terminalOutput]);
 
     return (
-        <div className="flex flex-col h-full bg-[#050505] border-l border-gray-800/50">
-            <div className="p-4 border-b border-gray-800/50 flex items-center justify-between bg-[#080808]">
+        <div className="flex flex-col h-full bg-surface border-l border-surface-light transition-colors duration-500">
+            <div className="p-4 border-b border-surface-light flex items-center justify-between bg-background">
                 <div className="flex items-center space-x-2">
-                    <TerminalIcon className="w-4 h-4 text-green-500" />
+                    <TerminalIcon className="w-4 h-4 text-terminal-green" />
                     <h2 className="text-xs font-black tracking-[0.2em] text-gray-500 uppercase">Sandbox Terminal</h2>
                 </div>
                 <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-surface-light" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-surface-light" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-terminal-green shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
                 </div>
             </div>
 
@@ -40,10 +40,10 @@ export function Terminal({ projectId }: TerminalProps) {
                     terminalOutput.map((out, idx) => (
                         <div key={idx} className="flex space-x-3 items-start group">
                             <span className="text-gray-700 select-none">[{new Date(out.timestamp * 1000).toLocaleTimeString([], { hour12: false })}]</span>
-                            <span className={out.streamType === 'stderr' ? 'text-red-400' : 'text-green-500/90'}>
+                            <span className={out.streamType === 'stderr' ? 'text-terminal-red' : 'text-terminal-green/90'}>
                                 {out.streamType === 'stderr' ? '✖' : '➜'}
                             </span>
-                            <span className={`break-all ${out.streamType === 'stderr' ? 'text-red-400/90' : 'text-gray-400'}`}>
+                            <span className={`break-all ${out.streamType === 'stderr' ? 'text-terminal-red/90' : 'text-gray-400'}`}>
                                 {out.line}
                             </span>
                         </div>
@@ -52,15 +52,15 @@ export function Terminal({ projectId }: TerminalProps) {
                 <div ref={bottomRef} />
             </div>
 
-            <div className="p-4 border-t border-gray-800/50 bg-[#080808]">
+            <div className="p-4 border-t border-surface-light bg-background">
                 <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-gray-900/40 p-2 rounded border border-gray-800 flex items-center justify-between">
+                    <div className="bg-surface/40 p-2 rounded border border-surface-light flex items-center justify-between">
                         <span className="text-[9px] font-black text-gray-600 uppercase">CPU</span>
-                        <span className="text-[10px] font-mono text-green-500">2.4%</span>
+                        <span className="text-[10px] font-mono text-terminal-green">2.4%</span>
                     </div>
-                    <div className="bg-gray-900/40 p-2 rounded border border-gray-800 flex items-center justify-between">
+                    <div className="bg-surface/40 p-2 rounded border border-surface-light flex items-center justify-between">
                         <span className="text-[9px] font-black text-gray-600 uppercase">MEM</span>
-                        <span className="text-[10px] font-mono text-blue-500">12%</span>
+                        <span className="text-[10px] font-mono text-accent-primary">12%</span>
                     </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-[10px] text-gray-700 font-bold uppercase tracking-widest">

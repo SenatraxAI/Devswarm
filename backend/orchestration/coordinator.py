@@ -4,6 +4,7 @@ Handles agent initialization and request routing
 """
 from typing import Dict, Optional, List, Any
 import asyncio
+import os
 from agents.agent_base import Agent
 from orchestration.message_router import MessageRouter
 from storage.event_log import EventLog, EventType
@@ -19,6 +20,10 @@ class AgentCoordinator:
         self.model_manager = model_manager
         self.project_sessions = {} # project_id -> {agent_name: Agent}
         self.is_ready = False
+        
+        # Initialize Project Manager
+        from storage.project_manager import ProjectManager
+        self.project_manager = ProjectManager()
         
         # Initialize MCP Host (singleton for now, tools are passive)
         from mcp.mcp_host import MCPHost
@@ -44,7 +49,15 @@ class AgentCoordinator:
         if project_id in self.project_sessions:
             return self.project_sessions[project_id]
         
-        print(f"🤖 Initializing agent team for project: {project_id}...")
+        # Get project details (root path)
+        project_data = self.project_manager.get_project(project_id)
+        if not project_data and project_id == "default":
+            # Auto-register current directory as default if missing
+            project_data = self.project_manager.open_project(os.getcwd(), name="DevSwarm Core")
+        
+        root_path = project_data.get("root_path") if project_data else os.getcwd()
+        
+        print(f"🤖 Initializing agent team for project: {project_id} at {root_path}...")
         
         # Initialize project-specific event log
         from storage import EventLog
@@ -53,6 +66,7 @@ class AgentCoordinator:
         # Initialize project metadata
         from storage.project_metadata import ProjectMetadata
         project_metadata = ProjectMetadata(project_id=project_id)
+        project_metadata.update(root_path=root_path) # Sync root path
         
         # Initialize team memory for this project
         from orchestration.team_memory import TeamMemory
@@ -94,6 +108,7 @@ class AgentCoordinator:
             )
             # Add project metadata to agent
             agent.project_metadata = project_metadata
+            agent.root_path = root_path
             session_agents[name] = agent
             
             # Configure Tool Permissions (Role-Based Access Control)

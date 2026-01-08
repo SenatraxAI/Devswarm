@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 }
 
 import { Sidebar } from '@/components/Sidebar'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 export default function RootLayout({
     children,
@@ -26,11 +27,13 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-            <body className="font-sans bg-[#02040a] text-white antialiased flex">
-                <Sidebar />
-                <main className="flex-1 ml-16 md:ml-20 min-h-screen">
-                    {children}
-                </main>
+            <body className="font-sans bg-background text-white antialiased flex">
+                <ThemeProvider>
+                    <Sidebar />
+                    <main className="flex-1 ml-16 md:ml-20 min-h-screen bg-background transition-colors duration-500">
+                        {children}
+                    </main>
+                </ThemeProvider>
             </body>
         </html>
     )

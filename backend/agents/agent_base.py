@@ -278,8 +278,13 @@ class Agent:
         if hasattr(self, "project_metadata"):
             user_name = self.project_metadata.get("user_name", "Boss")
             user_role = self.project_metadata.get("user_role", "Project Owner")
-            project_id = self.event_log.project_id if self.event_log else "DevSwarm"
-            instructions.append(f"📢 CONTEXT: You are working on '{project_id}' for {user_name} ({user_role}).")
+            user_company = self.project_metadata.get("user_company", "DevSwarm AI")
+            project_name = self.project_metadata.get("project_name", "DevSwarm")
+            
+            context_msg = f"📢 CONTEXT: Project '{project_name}' for {user_name} ({user_role})"
+            if user_company:
+                context_msg += f" @ {user_company}"
+            instructions.append(context_msg + ".")
         else:
             instructions.append("📢 CONTEXT: You are in the TEAM CHANNEL with your Boss.")
 
@@ -438,7 +443,8 @@ Wait for the result. Do not guess what happens next.
         return await self.mcp_host.execute_tool(
             tool_name,
             arguments,
-            self.name
+            self.name,
+            context={"root_path": getattr(self, "root_path", None)}
         )
     
     def get_status(self) -> Dict[str, Any]:

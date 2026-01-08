@@ -89,27 +89,27 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
     });
 
     return (
-        <div className="flex flex-col h-full bg-[#02040a]">
+        <div className="flex flex-col h-full bg-background transition-colors duration-500">
             {/* Tab Header */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800/50 bg-[#050505]">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-surface-light bg-surface">
                 <div className="flex items-center space-x-1">
                     <button
                         onClick={() => setViewMode('chat')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'chat' ? 'bg-blue-600/10 text-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'chat' ? 'bg-accent-primary/10 text-accent-primary' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <MessageSquare className="w-4 h-4" />
                         <span>Chat</span>
                     </button>
                     <button
                         onClick={() => setViewMode('code')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'code' ? 'bg-blue-600/10 text-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'code' ? 'bg-accent-primary/10 text-accent-primary' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <Code className="w-4 h-4" />
                         <span>Code</span>
                     </button>
                     <button
                         onClick={() => setViewMode('preview')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'preview' ? 'bg-blue-600/10 text-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'preview' ? 'bg-accent-primary/10 text-accent-primary' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <Eye className="w-4 h-4" />
                         <span>Preview</span>
@@ -117,7 +117,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                 </div>
 
                 <div className="flex items-center space-x-3 text-[10px] font-black uppercase tracking-widest text-gray-600">
-                    <span className="flex items-center text-blue-400 bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10 tracking-widest">
+                    <span className="flex items-center text-accent-primary bg-accent-primary/5 px-2 py-0.5 rounded border border-accent-primary/10 tracking-widest">
                         <Hash className="w-3 h-3 mr-1" />
                         {activeContext.replace('dm-', '@')}
                     </span>
@@ -143,7 +143,7 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                             projectMessages.map((msg, idx) => (
                                 <div key={idx} className="group relative animate-in fade-in slide-in-from-bottom-2 duration-300">
                                     <div className="flex items-start space-x-4">
-                                        <div className="w-8 h-8 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-[10px] font-black text-gray-500 shrink-0 uppercase">
+                                        <div className="w-8 h-8 rounded-lg bg-surface border border-surface-light flex items-center justify-center text-[10px] font-black text-gray-500 shrink-0 uppercase">
                                             {msg.agent ? msg.agent[0] : 'U'}
                                         </div>
                                         <div className="flex-1 space-y-1">
@@ -158,14 +158,14 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                                                 </div>
                                                 <button
                                                     onClick={() => handleReply(msg.agent || 'User', msg.message || '')}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-600 hover:text-blue-500 transition-all"
+                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-600 hover:text-accent-primary transition-all"
                                                 >
                                                     <CornerDownRight className="w-3 h-3" />
                                                 </button>
                                             </div>
                                             <div
                                                 onDoubleClick={() => handleReply(msg.agent || 'User', msg.message || '')}
-                                                className="bg-[#0a0a0a] border border-gray-800/50 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-300 leading-relaxed font-outfit cursor-pointer select-none active:bg-blue-900/10 transition-colors"
+                                                className="bg-surface border border-surface-light p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-300 leading-relaxed font-outfit cursor-pointer select-none active:bg-accent-primary/10 transition-colors"
                                             >
                                                 {msg.message}
                                             </div>
@@ -204,16 +204,16 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
             </div>
 
             {/* Input Area Overlay */}
-            <div className="p-6 border-t border-gray-800/30 bg-[#050505]/50 backdrop-blur-md">
+            <div className="p-6 border-t border-surface-light bg-surface/50 backdrop-blur-md">
                 {replyingTo && (
-                    <div className="mb-3 flex items-center justify-between bg-[#111] border-l-4 border-blue-500 rounded p-3 animate-in slide-in-from-bottom-2 shadow-lg">
+                    <div className="mb-3 flex items-center justify-between bg-surface border-l-4 border-accent-primary rounded p-3 animate-in slide-in-from-bottom-2 shadow-lg">
                         <div className="overflow-hidden flex-1 mr-4">
-                            <div className="text-xs font-bold text-blue-400 mb-0.5">Replying to {replyingTo.agent}</div>
+                            <div className="text-xs font-bold text-accent-primary mb-0.5">Replying to {replyingTo.agent}</div>
                             <div className="text-xs text-gray-400 truncate opacity-80">{replyingTo.message}</div>
                         </div>
                         <button
                             onClick={() => setReplyingTo(null)}
-                            className="p-1.5 hover:bg-gray-800 rounded-full transition-colors text-gray-500 hover:text-white"
+                            className="p-1.5 hover:bg-surface-light rounded-full transition-colors text-gray-500 hover:text-white"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -226,14 +226,14 @@ export function Workspace({ projectId, activeContext, markAsRead }: WorkspacePro
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         placeholder={activeContext === 'general' ? `Message the swarm about project: ${projectId}...` : `Send a private message to ${activeContext.replace('dm-', '')}...`}
-                        className="w-full bg-[#0a0a0a] border border-gray-800 p-4 pl-12 rounded-2xl text-sm focus:outline-none focus:border-blue-500 transition-all text-gray-300 shadow-2xl"
+                        className="w-full bg-background border border-surface-light p-4 pl-12 rounded-2xl text-sm focus:outline-none focus:border-accent-primary transition-all text-gray-300 shadow-2xl"
                     />
-                    <MessageSquare className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-blue-500 transition-colors" />
+                    <MessageSquare className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-accent-primary transition-colors" />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-                        <div className="text-[10px] font-black text-gray-700 bg-gray-900 px-2 py-1 rounded border border-gray-800">CMD</div>
+                        <div className="text-[10px] font-black text-gray-700 bg-surface-light px-2 py-1 rounded border border-surface-light">CMD</div>
                         <button
                             onClick={handleSendMessage}
-                            className="p-1 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+                            className="p-1 px-3 bg-accent-primary hover:bg-accent-primary/80 text-white rounded-lg transition-all active:scale-95 shadow-lg shadow-accent-primary/20"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>

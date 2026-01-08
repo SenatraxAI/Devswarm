@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 import json
 from pathlib import Path
+from storage.user_config import UserConfig
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -31,6 +32,15 @@ class APIKeyUpdate(BaseModel):
     """API Key update request"""
     key_name: str
     value: str
+
+
+class UserProfileUpdate(BaseModel):
+    """User Profile update request"""
+    name: str
+    role: str
+    company: Optional[str] = None
+    bio: Optional[str] = None
+    preferences: Optional[Dict[str, Any]] = None
 
 
 @router.get("/mcp-servers")
@@ -186,5 +196,23 @@ async def reload_configuration():
             "message": "Configuration reloaded. Restart backend for full effect."
         }
     
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/profile")
+async def get_user_profile():
+    """Get the global user profile"""
+    config = UserConfig()
+    return {"profile": config.get_all(), "success": True}
+
+
+@router.post("/profile")
+async def update_user_profile(profile: UserProfileUpdate):
+    """Update the global user profile"""
+    try:
+        config = UserConfig()
+        config.update(**profile.dict(exclude_unset=True))
+        return {"success": True, "message": "Profile updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

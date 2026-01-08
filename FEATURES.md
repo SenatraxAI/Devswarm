@@ -1,7 +1,7 @@
 # DevSwarm - Implemented Features
 
 **Last Updated**: January 8, 2026  
-**Current Phase**: Phase 5: User Identity & Advanced Memory (Complete ✅)
+**Current Phase**: Phase 6: Project Management & Explorer (Complete ✅)
 
 ---
 
@@ -92,6 +92,26 @@ This phase transforms DevSwarm into a truly "aware" engineering partner by imple
 - [x] **Blacklist/Style Manual**: Removed robotic AI "filler" phrases.
 - [x] **Natural Grammar**: Enforced contractions and diverse greetings.
 - [x] **Name Prefix Fix**: Prevented agents from repeating their name.
+- [x] **Casusl Grammar**: Enforced professional yet natural tone.
+
+---
+
+## Phase 6: Project Management & Explorer (Complete ✅)
+This phase introduces professional project management capabilities, allowing DevSwarm to operate outside its own root directory and work on any local folder.
+
+### 6.1 Project Hub & Explorer ✅
+- [x] **Visual Dashboard**: A central hub to manage multiple local workspaces.
+- [x] **Recent Projects Registry**: Persistent list of local paths with timestamp tracking.
+- [x] **Dynamic Context Switching**: Switch between projects instantly via the UI.
+
+### 6.2 Native OS Integration ✅
+- [x] **Native Folder Picker**: Bridge to Windows File Explorer via PowerShell.
+- [x] **Absolute Path Grounding**: Agents are strictly grounded in the project's absolute root.
+- [x] **Security Sandboxing**: Tools (Filesystem, Terminal) are restricted to whitelisted project paths.
+
+### 6.3 Project-Aware WebSocket ✅
+- [x] **Isolated Message History**: Chat history is replayed and saved per project ID.
+- [x] **Session Persistence**: Agent state and memory are maintained across project switches.
 
 ---
 
@@ -106,10 +126,12 @@ This phase transforms DevSwarm into a truly "aware" engineering partner by imple
 - **Slack-style communication**: Dedicated direct message rooms.
 - **Double-Tap to Reply**: Enhanced interaction with auto-@mention.
 - **Private DM Indicators**: Visual confirmation of chat privacy levels.
+- **Project Hub & Explorer**: Open and switch between local folders just like VS Code.
 
 ### 💾 **Memory & Architecture**
 - **Git-like Event Store + FAISS Vector Store**: Dual-layer memory for raw durability and semantic retrieval.
 - **Narrative Context Manager**: Summarizes long histories for infinite conversation capability.
+- **Absolute Root Grounding**: Multi-project support with secure filesystem boundaries.
 
 ---
 
@@ -135,4 +157,4 @@ npm run dev
 
 ---
 
-**Last Commit**: Phase 5 - Final Implementation of Global RAG, Identity Anchoring, and Context Compression
+**Last Commit**: Phase 6 - Implementation of Project Hub, Native Folder Picker, and Multi-Project Grounding

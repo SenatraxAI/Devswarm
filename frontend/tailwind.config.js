@@ -9,25 +9,25 @@ module.exports = {
         extend: {
             colors: {
                 // Background palette
-                background: '#0f172a',      // slate-950
-                surface: '#1e293b',         // slate-800
-                'surface-light': '#334155', // slate-700
+                background: 'var(--color-bg)',
+                surface: 'var(--color-surface)',
+                'surface-light': 'var(--color-surface-light)',
 
                 // Agent status colors
-                'agent-idle': '#94a3b8',    // slate-400
-                'agent-thinking': '#eab308', // yellow-500
-                'agent-speaking': '#06b6d4', // cyan-500
-                'agent-error': '#ef4444',    // red-500
-                'agent-success': '#22c55e',  // green-500
+                'agent-idle': 'var(--color-agent-idle)',
+                'agent-thinking': 'var(--color-agent-thinking)',
+                'agent-speaking': 'var(--color-agent-speaking)',
+                'agent-error': 'var(--color-agent-error)',
+                'agent-success': 'var(--color-agent-success)',
 
                 // Accent colors
-                'accent-primary': '#8b5cf6', // violet-500
-                'accent-secondary': '#ec4899', // pink-500
+                'accent-primary': 'var(--color-accent-primary)',
+                'accent-secondary': 'var(--color-accent-secondary)',
 
                 // Terminal colors
-                'terminal-green': '#22c55e',
-                'terminal-red': '#ef4444',
-                'terminal-yellow': '#eab308',
+                'terminal-green': 'var(--color-terminal-green)',
+                'terminal-red': 'var(--color-terminal-red)',
+                'terminal-yellow': 'var(--color-terminal-yellow)',
             },
             fontFamily: {
                 mono: ['JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', 'monospace'],

@@ -3,41 +3,12 @@
  * Manages connection, reconnection, and event handling
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { WS_URL } from '@/config';
-
-interface AgentStatus {
-    name: string;
-    role: string;
-    status: 'idle' | 'thinking' | 'speaking' | 'error';
-    message?: string;
-}
-
-interface AgentMessage {
-    agent: string;
-    message: string;
-    messageType: 'thought' | 'code' | 'response' | 'error';
-    branch_name?: string;
-    thread_id?: string;
-    timestamp: number;
-}
-
-interface TerminalOutput {
-    line: string;
-    streamType: 'stdout' | 'stderr';
-    timestamp: number;
-}
-
-interface CodeChange {
-    filePath: string;
-    diff: string;
-    agent: string;
-    timestamp: number;
-}
+import { Agent, AgentMessage, TerminalOutput, CodeChange } from '@/types';
 
 interface UseWebSocketReturn {
     isConnected: boolean;
-    agents: AgentStatus[];
+    agents: Agent[];
     messages: AgentMessage[];
     terminalOutput: TerminalOutput[];
     codeChanges: CodeChange[];
@@ -46,20 +17,43 @@ interface UseWebSocketReturn {
 
 export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
     const [isConnected, setIsConnected] = useState(false);
-    const [agents, setAgents] = useState<AgentStatus[]>([]);
+    const [agents, setAgents] = useState<Agent[]>([]);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [terminalOutput, setTerminalOutput] = useState<TerminalOutput[]>([]);
     const [codeChanges, setCodeChanges] = useState<CodeChange[]>([]);
 
+    const [project_id, setProjectId] = useState<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+
+    // Detect project changes from localStorage
+    useEffect(() => {
+        const checkProject = () => {
+            const id = localStorage.getItem('active_project_id') || 'default';
+            if (id !== project_id) {
+                setProjectId(id);
+                // Clear state on project switch to prevent context leakage
+                setMessages([]);
+                setTerminalOutput([]);
+                setCodeChanges([]);
+                // Reconnect with new context
+                if (wsRef.current) wsRef.current.close();
+            }
+        };
+
+        checkProject();
+        const interval = setInterval(checkProject, 1000); // Poll for changes
+        return () => clearInterval(interval);
+    }, [project_id]);
 
     const connect = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             return;
         }
 
-        const ws = new WebSocket(url);
+        const wsUrl = new URL(url);
+        wsUrl.searchParams.set('project_id', project_id || 'default');
+        const ws = new WebSocket(wsUrl.toString());
 
         ws.onopen = () => {
             console.log('✅ WebSocket connected');
@@ -69,6 +63,11 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+
+                // Filter events by current project ID to prevent overlap
+                if (data.data?.project_id && data.data.project_id !== project_id) {
+                    return;
+                }
 
                 switch (data.type) {
                     case 'connection':
@@ -159,11 +158,16 @@ export function useWebSocket(url: string = WS_URL): UseWebSocketReturn {
 
     const sendMessage = useCallback((message: any) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify(message));
+            // Inject project_id into every outgoing message
+            const payload = {
+                ...message,
+                project_id: project_id || 'default'
+            };
+            wsRef.current.send(JSON.stringify(payload));
         } else {
             console.warn('WebSocket not connected');
         }
-    }, []);
+    }, [project_id]);
 
     return {
         isConnected,

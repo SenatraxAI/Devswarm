@@ -12,14 +12,14 @@ export default function TimelinePage() {
     const { events, loading, error, total, fetchEvents, fetchMore, hasMore } = useEvents(projectId);
 
     return (
-        <main className="min-h-screen bg-[#02040a] text-white p-6 md:p-12 font-outfit selection:bg-blue-500/30">
+        <main className="min-h-screen bg-background text-white p-6 md:p-12 font-outfit selection:bg-accent-primary/30 transition-colors duration-500">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
                         <div className="flex items-center space-x-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                <GitBranch className="w-6 h-6 text-blue-500" />
+                            <div className="p-2.5 rounded-xl bg-accent-primary/10 border border-accent-primary/20">
+                                <GitBranch className="w-6 h-6 text-accent-primary" />
                             </div>
                             <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
                                 Event Timeline
@@ -32,30 +32,30 @@ export default function TimelinePage() {
                     </div>
 
                     <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-900 border border-gray-800">
-                            <Activity className="w-4 h-4 text-green-500" />
+                        <div className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-surface border border-surface-light">
+                            <Activity className="w-4 h-4 text-agent-success" />
                             <span className="text-sm font-medium text-gray-300">{total} Total Events</span>
                         </div>
                         <button
                             onClick={() => fetchEvents()}
                             disabled={loading}
-                            className="p-2.5 rounded-lg bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-800 transition-all disabled:opacity-50 group"
+                            className="p-2.5 rounded-lg bg-surface border border-surface-light hover:border-accent-primary/50 hover:bg-surface-light transition-all disabled:opacity-50 group"
                         >
-                            <RefreshCw className={`w-5 h-5 text-gray-400 group-hover:text-blue-400 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 text-gray-400 group-hover:text-accent-primary ${loading ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </header>
 
                 {/* Dashboard Stats (Optional/Phase 4.4) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-                    <div className="p-4 rounded-xl border border-gray-800 bg-gray-950/50 backdrop-blur-sm">
+                    <div className="p-4 rounded-xl border border-surface-light bg-surface/50 backdrop-blur-sm">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-gray-500 uppercase tracking-widest font-bold">Active Agents</span>
-                            <Layers className="w-4 h-4 text-purple-500" />
+                            <Layers className="w-4 h-4 text-accent-primary" />
                         </div>
                         <div className="flex -space-x-2 overflow-hidden">
                             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                                <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-gray-950 bg-gray-800 flex items-center justify-center text-[10px] font-bold">
+                                <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-background bg-surface-light flex items-center justify-center text-[10px] font-bold">
                                     A{i}
                                 </div>
                             ))}
@@ -79,7 +79,7 @@ export default function TimelinePage() {
                                 <button
                                     onClick={fetchMore}
                                     disabled={loading}
-                                    className="px-8 py-3 rounded-full border border-gray-800 bg-gray-900 hover:border-blue-500/50 transition-all font-bold text-sm text-gray-300"
+                                    className="px-8 py-3 rounded-full border border-surface-light bg-surface hover:border-accent-primary/50 transition-all font-bold text-sm text-gray-300"
                                 >
                                     Load Older Events
                                 </button>

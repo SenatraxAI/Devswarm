@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Settings, Server, Key, Shield, RefreshCw, Plus, Trash2, X, AlertCircle } from 'lucide-react'
+import { Settings, Server, Key, Shield, RefreshCw, Plus, Trash2, X, AlertCircle, User, Briefcase, Globe, FileText, CheckCircle } from 'lucide-react'
 import { API_URL } from '@/config'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface MCPServer {
     enabled: boolean
@@ -19,12 +20,26 @@ interface APIKeyStatus {
     description: string
 }
 
+interface UserProfile {
+    name: string
+    role: string
+    company?: string
+    bio?: string
+    preferences: {
+        theme: string
+        natural_grammar: boolean
+        agent_style: string
+    }
+}
+
 export default function SettingsPage() {
+    const { theme: currentTheme, setTheme: setGlobalTheme } = useTheme()
     const [mcpServers, setMcpServers] = useState<Record<string, MCPServer>>({})
     const [apiKeys, setApiKeys] = useState<Record<string, APIKeyStatus>>({})
+    const [profile, setProfile] = useState<UserProfile | null>(null)
     const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
-    const [expandedSections, setExpandedSections] = useState({ mcp: true, api: true })
+    const [expandedSections, setExpandedSections] = useState({ mcp: true, api: true, profile: true })
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [newServer, setNewServer] = useState<Partial<MCPServer>>({
         enabled: true,
@@ -36,6 +51,7 @@ export default function SettingsPage() {
         config: {}
     })
     const [rawConfig, setRawConfig] = useState('')
+    const [isSavingProfile, setIsSavingProfile] = useState(false)
 
     useEffect(() => {
         loadSettings()
@@ -54,6 +70,11 @@ export default function SettingsPage() {
             const keysData = await keysRes.json()
             setApiKeys(keysData.api_keys || {})
 
+            // Load Profile
+            const profileRes = await fetch(`${API_URL}/settings/profile`)
+            const profileData = await profileRes.json()
+            setProfile(profileData.profile)
+
             setLoading(false)
             setIsRefreshing(false)
         } catch (error) {
@@ -63,7 +84,7 @@ export default function SettingsPage() {
         }
     }
 
-    const toggleSection = (section: 'mcp' | 'api') => {
+    const toggleSection = (section: 'mcp' | 'api' | 'profile') => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
     }
 
@@ -152,6 +173,24 @@ export default function SettingsPage() {
         }
     }
 
+    const saveProfile = async () => {
+        if (!profile) return
+        setIsSavingProfile(true)
+        try {
+            const res = await fetch(`${API_URL}/settings/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profile)
+            })
+            if (res.ok) {
+                setTimeout(() => setIsSavingProfile(false), 500)
+            }
+        } catch (error) {
+            console.error('Failed to save profile:', error)
+            setIsSavingProfile(false)
+        }
+    }
+
     if (loading && !isRefreshing) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -180,6 +219,148 @@ export default function SettingsPage() {
                             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
+                </div>
+
+                {/* Profile Section */}
+                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-blue-500/20 overflow-hidden mb-6">
+                    <button
+                        onClick={() => toggleSection('profile')}
+                        className="w-full flex items-center justify-between p-6 hover:bg-slate-700/30 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <User className={`w-5 h-5 transition-colors ${expandedSections.profile ? 'text-blue-400' : 'text-gray-500'}`} />
+                            <h2 className="text-xl font-semibold text-white">Personal Identity</h2>
+                        </div>
+                        {isSavingProfile ? (
+                            <span className="text-xs text-blue-400 animate-pulse font-bold uppercase">Saving...</span>
+                        ) : (
+                            <span className="text-xs text-blue-400 font-black tracking-[0.2em] uppercase">Verified Identity</span>
+                        )}
+                    </button>
+
+                    {expandedSections.profile && profile && (
+                        <div className="p-6 pt-0 space-y-6">
+                            <p className="text-sm text-gray-400 font-medium font-outfit mb-4">
+                                Define your role and preferences to anchor agent behavior and personalization.
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-widest">
+                                            <User className="w-3 h-3" /> Full Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={profile.name}
+                                            onChange={e => setProfile({ ...profile, name: e.target.value })}
+                                            onBlur={saveProfile}
+                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-widest">
+                                            <Briefcase className="w-3 h-3" /> Professional Role
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={profile.role}
+                                            onChange={e => setProfile({ ...profile, role: e.target.value })}
+                                            onBlur={saveProfile}
+                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-widest">
+                                            <Globe className="w-3 h-3" /> Company / Organization
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={profile.company || ''}
+                                            onChange={e => setProfile({ ...profile, company: e.target.value })}
+                                            onBlur={saveProfile}
+                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-widest">
+                                            <FileText className="w-3 h-3" /> Brief Bio / Expertise
+                                        </label>
+                                        <textarea
+                                            value={profile.bio || ''}
+                                            onChange={e => setProfile({ ...profile, bio: e.target.value })}
+                                            onBlur={saveProfile}
+                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all h-[155px] resize-none font-medium"
+                                            placeholder="e.g. Senior Software Architect focused on high-performance backends..."
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <CheckCircle className={`w-5 h-5 ${profile.preferences.natural_grammar ? 'text-green-400' : 'text-gray-600'}`} />
+                                        <div>
+                                            <p className="text-sm font-bold text-white">Natural Grammar</p>
+                                            <p className="text-[10px] text-gray-500 font-medium">Contractions & casual tone</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const newProfile = {
+                                                ...profile,
+                                                preferences: { ...profile.preferences, natural_grammar: !profile.preferences.natural_grammar }
+                                            };
+                                            setProfile(newProfile);
+                                            // Trigger save immediately for toggles
+                                            setTimeout(() => saveProfile(), 0);
+                                        }}
+                                        className={`w-10 h-5 rounded-full transition-colors relative ${profile.preferences.natural_grammar ? 'bg-green-500' : 'bg-gray-700'}`}
+                                    >
+                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${profile.preferences.natural_grammar ? 'right-1' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="p-4 bg-slate-900 rounded-xl border border-white/5">
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Agent Style</p>
+                                    <select
+                                        value={profile.preferences.agent_style}
+                                        onChange={e => {
+                                            setProfile({ ...profile, preferences: { ...profile.preferences, agent_style: e.target.value } });
+                                            setTimeout(() => saveProfile(), 0);
+                                        }}
+                                        className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
+                                    >
+                                        <option value="professional_casual" className="bg-slate-800">Professional Casual</option>
+                                        <option value="strict_formal" className="bg-slate-800">Strict Formal</option>
+                                        <option value="energetic" className="bg-slate-800">Energetic / Hacker</option>
+                                    </select>
+                                </div>
+
+                                <div className="p-4 bg-slate-900 rounded-xl border border-white/5">
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Interface Theme</p>
+                                    <select
+                                        value={profile.preferences.theme}
+                                        onChange={e => {
+                                            const newTheme = e.target.value as any;
+                                            setProfile({ ...profile, preferences: { ...profile.preferences, theme: newTheme } });
+                                            setGlobalTheme(newTheme);
+                                            setTimeout(() => saveProfile(), 0);
+                                        }}
+                                        className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
+                                    >
+                                        <option value="dark" className="bg-slate-800">Cyber Dark (OLED)</option>
+                                        <option value="slate" className="bg-slate-800">Deep Ocean</option>
+                                        <option value="purple" className="bg-slate-800">Neon Purple</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* MCP Servers Section */}

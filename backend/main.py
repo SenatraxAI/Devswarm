@@ -110,8 +110,8 @@ async def websocket_endpoint(websocket: WebSocket):
     """Real-time agent communication via WebSocket"""
     await websocket.accept()
     
-    # Simple handshake to get project_id
-    project_id = "default"
+    # Get project_id from query params or default
+    project_id = websocket.query_params.get("project_id", "default")
     
     try:
         # Send initial connection success
