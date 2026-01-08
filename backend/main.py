@@ -2,13 +2,13 @@
 DevSwarm Backend - Main FastAPI Application
 Serves as the central orchestrator for the 8-agent team
 """
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 import json
 import os
-import os
+import re
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -44,55 +44,44 @@ async def startup_event():
     """Initialize model and agent coordinator on startup"""
     global model_manager, coordinator
     
-    print("🚀 Starting DevSwarm Backend...")
-    
-    print("📦 Loading AI model...")
+    print("\n" + "="*60)
+    print("🚀 STARTING DEVSWARM BACKEND...")
+    print("="*60 + "\n")
     
     # Initialize model manager (singleton)
     model_manager = ModelManager()
     await model_manager.initialize()
     
-    # Initialize agent coordinator (creates its own MCP host internally)
+    # Initialize agent coordinator
     coordinator = AgentCoordinator(model_manager)
     await coordinator.initialize()
     
-    print("✅ DevSwarm Backend ready!")
+    print("\n✅ DEVSWARM BACKEND READY!\n")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
     global model_manager, coordinator
-    
-    print("🛑 Shutting down DevSwarm Backend...")
-    
+    print("\n🛑 SHUTTING DOWN DEVSWARM BACKEND...")
     if coordinator:
         await coordinator.shutdown()
-    
     if model_manager:
         await model_manager.shutdown()
-    
-    print("✅ Shutdown complete")
+    print("✅ SHUTDOWN COMPLETE\n")
 
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
-    return {
-        "status": "running",
-        "agents": 8,
-        "model": "phi-4-multimodal"
-    }
+    return {"status": "running", "agents": 8}
 
 
 @app.get("/health")
 async def health():
-    """Detailed health check"""
     return {
         "status": "healthy",
         "model_loaded": model_manager.is_loaded if model_manager else False,
-        "agents_ready": coordinator.is_ready if coordinator else False,
-        "vram_usage_gb": model_manager.get_vram_usage() if model_manager else 0
+        "agents_ready": coordinator.is_ready if coordinator else False
     }
 
 
@@ -108,116 +97,126 @@ app.include_router(settings_router, prefix="/api/v1")
 
 @app.websocket("/api/v1/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """Real-time agent communication via WebSocket"""
+    """Real-time agent communication via WebSocket with intensive logging"""
     await websocket.accept()
     
-    # Get project_id from query params or default
+    # Get initial project_id from query params
     project_id = websocket.query_params.get("project_id", "default")
     
     try:
-        # Send initial connection success
-        agents = coordinator.get_agents(project_id)
+        print(f"\n{'🔌'*3} NEW WEBSOCKET CONNECTION")
+        print(f"   Project ID: {project_id}")
+        print(f"   Client: {websocket.client}")
+        
+        # Get team for this project
+        agents = await coordinator.get_or_create_agents(project_id)
+        
+        # 1. Send initial connection success with current agent statuses
         await websocket.send_json({
             "type": "connection",
             "status": "connected",
             "project_id": project_id,
-            "agents": [a.get_status() for a in agents.values()]
+            "agents": [a.to_dict() for a in agents.values()]
         })
 
-        # Replay full history (up to 1000 messages for performance)
-        recent_events = coordinator.get_project_events(project_id, limit=1000)
+        # 2. Replay recent history (briefly to avoid overwhelming)
+        print(f"📜 Replaying recent history for {project_id}...")
+        recent_events = coordinator.get_project_events(project_id, limit=50)
         for event in recent_events:
-            # Map event log format to frontend message format
             if event["type"] in ["USER_MESSAGE", "AGENT_MESSAGE_SENT", "AGENT_MENTION"]:
                 await websocket.send_json({
                     "type": "agent_message",
                     "data": {
                         "agent": event["agent"],
                         "message": event["payload"].get("message", ""),
-                        "messageType": "response", # Treating all history as "response" style for now
+                        "messageType": "response",
                         "branch_name": event.get("branch_name", "main"),
                         "thread_id": event.get("thread_id"),
                         "timestamp": event["timestamp"],
                         "project_id": project_id
                     }
                 })
-        
+
+        # 3. Message Loop
         while True:
             data = await websocket.receive_json()
             
-            print(f"\n📨 RECEIVED MESSAGE:")
+            # Deep Diagnostic Log
+            print(f"\n{'📥'*3} WS RECEIVED:")
             print(f"   Type: {data.get('type')}")
-            print(f"   Data: {json.dumps(data, indent=2)[:500]}")
+            print(f"   Thread: {data.get('thread_id')}")
+            print(f"   Project: {data.get('project_id')}")
             
-            # Update project context if provided
-            if "project_id" in data:
-                project_id = data["project_id"]
+            # Update project context if provided in message
+            current_project = data.get("project_id", project_id)
+            if current_project != project_id:
+                print(f"🔄 Switched context from {project_id} to {current_project}")
+                project_id = current_project
+                agents = await coordinator.get_or_create_agents(project_id)
             
             branch_name = data.get("branch_name", "main")
             thread_id = data.get("thread_id")
             msg_type = data.get("type")
             
-            if msg_type == "user_message":
-                # Regular swarm message
-                message = data.get("message")
+            # Unified User/Direct Message Echo Logic
+            if msg_type in ["user_message", "direct_message"]:
+                message_text = data.get("message")
+                recipient = data.get("recipient")
                 
-                # Echo message back to user for UI visibility
-                await websocket.send_json({
+                # Echo IMMEDIATELY for UI feedback
+                echo_payload = {
                     "type": "agent_message",
                     "data": {
                         "agent": "User",
-                        "message": message,
+                        "message": message_text,
                         "messageType": "response",
                         "branch_name": branch_name,
                         "thread_id": thread_id,
                         "timestamp": datetime.now().timestamp(),
-                        "project_id": project_id  # CRITICAL FIX: Frontend filters by this!
+                        "project_id": project_id
                     }
-                })
+                }
+                print(f"📤 ECHOING BACK TO UI: {json.dumps(echo_payload, indent=2)}")
+                await websocket.send_json(echo_payload)
 
-                await coordinator.process_user_message(
-                    message, 
-                    project_id=project_id,
-                    branch_name=branch_name,
-                    thread_id=thread_id,
-                    websocket=websocket
-                )
-                
-            elif msg_type == "direct_message":
-                # Direct message to a specific agent
-                recipient = data.get("recipient")
-                message = data.get("message")
-                
-                agents = coordinator.get_agents(project_id)
-                if recipient in agents:
-                    # Trigger the specific agent to process the DM
+                if msg_type == "user_message":
+                    # Global project broadcast
                     asyncio.create_task(
-                        agents[recipient].process_message(
-                            f"[DM] {message}", 
-                            websocket=websocket,
+                        coordinator.process_user_message(
+                            message_text,
+                            project_id=project_id,
                             branch_name=branch_name,
-                            thread_id=thread_id
+                            thread_id=thread_id,
+                            websocket=websocket
                         )
                     )
+                else:
+                    # Targeted Direct Message
+                    if recipient in agents:
+                        print(f"🎯 ROUTING DM TO: {recipient}")
+                        asyncio.create_task(
+                            agents[recipient].process_message(
+                                f"[DM] {message_text}",
+                                websocket=websocket,
+                                branch_name=branch_name,
+                                thread_id=thread_id
+                            )
+                        )
+                    else:
+                        print(f"❌ RECIPIENT NOT FOUND: {recipient}")
+            
+            # Agent Typing/Status updates
+            elif msg_type == "agent_status":
+                print(f"📊 STATUS UPDATE: {data.get('data', {}).get('agent')} -> {data.get('data', {}).get('status')}")
 
-                    # Echo DM back to user for UI visibility
-                    await websocket.send_json({
-                        "type": "agent_message",
-                        "data": {
-                            "agent": "User",
-                            "message": message,
-                            "messageType": "response",
-                            "branch_name": branch_name,
-                            "thread_id": thread_id,
-                            "timestamp": datetime.now().timestamp(),
-                            "project_id": project_id # CRITICAL FIX
-                        }
-                    })
-                    
+    except WebSocketDisconnect:
+        print(f"🔌 WebSocket disconnected (Project: {project_id})")
     except Exception as e:
-        print(f"❌ WebSocket error: {e}")
+        print(f"❌ WebSocket EXCEPTION: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
-        print("🔌 WebSocket closed")
+        print(f"🔌 WebSocket handler terminated (Project: {project_id})")
 
 
 if __name__ == "__main__":
