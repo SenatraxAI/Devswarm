@@ -215,36 +215,6 @@ class Agent:
                 print(f"🔍 Checking for tool calls...")
                 tool_output = await self._process_tool_calls(full_response, session, websocket, branch_name, thread_id)
                 
-                if tool_output:
-                    print(f"🛠️ TOOL WAS EXECUTED: {tool_output[:100]}")
-                    
-                    # LOOP DETECTION: Check if we just did this exact thing
-                    # Extract the tool call string for comparison
-                    tool_pattern = re.compile(r'<tool_code>(.*?)</tool_code>', re.DOTALL)
-                    match = tool_pattern.search(full_response)
-                    if match:
-                        current_call = match.group(1).strip()
-                        if current_call == last_tool_call:
-                            print(f"⚠️ LOOP DETECTED: Repeating {current_call}. Stopping.")
-                            session.add_message("system", "Warning: You are repeating the same tool call. Please try a different approach or conclude your response.")
-                            # Don't break immediately, give it one chance to fix it, but prevent infinite
-                            if iteration > 5:
-                                break
-                        last_tool_call = current_call
-                else:
-                    print(f"✅ NO TOOL CALL - Final response")
-                
-                # UI MESSAGE LOGIC:
-                should_send = False
-                if not tool_output:
-                    # Final response must always be sent
-                    should_send = True
-                elif clean_response and clean_response not in ["Working on it...", "On it.", "One moment."]:
-                    # Intermediate response with actual content
-                    # Only send if it's not a repeat of what we've already said this turn
-                    if clean_response != pending_message:
-                        should_send = True
-                
                 if websocket and clean_response and should_send:
                     try:
                         await websocket.send_json({
@@ -261,6 +231,25 @@ class Agent:
                         pending_message = clean_response
                     except:
                         pass
+
+                # --- LOOP DETECTION & BREAK LOGIC ---
+                if tool_output:
+                    # Extract the tool call string for comparison
+                    tool_pattern = re.compile(r'<tool_code>(.*?)</tool_code>', re.DOTALL)
+                    match = tool_pattern.search(full_response)
+                    if match:
+                        current_call = match.group(1).strip()
+                        if current_call == last_tool_call:
+                            print(f"⚠️ LOOP DETECTED: Repeating {current_call}. Proactive break.")
+                            # Inject a forceful "Do not repeat" observation
+                            session.add_message("system", f"OBSERVATION: You already ran {current_call} and it was successful. PLEASE DO NOT CALL IT AGAIN. Conclude your response to the user with the information you have.")
+                            
+                            # Hard break on iteration 3 or more of the same call
+                            if iteration >= 2:
+                                print(f"🛑 FORCING LOOP BREAK at iteration {iteration}")
+                                break
+                        last_tool_call = current_call
+                # -----------------------------------
 
                 # If no tool call was found, we are done
                 if not tool_output:
