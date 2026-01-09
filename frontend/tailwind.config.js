@@ -9,25 +9,60 @@ module.exports = {
         extend: {
             colors: {
                 // Background palette
-                background: 'var(--color-bg)',
-                surface: 'var(--color-surface)',
-                'surface-light': 'var(--color-surface-light)',
+                canvas: 'var(--bg-canvas)',
+                panel: 'var(--bg-panel)',
+                element: 'var(--bg-element)',
+                elevated: 'var(--bg-elevated)',
 
-                // Agent status colors
+                // Borders
+                border: {
+                    DEFAULT: 'var(--border-default)',
+                    subtle: 'var(--border-subtle)',
+                    focus: 'var(--border-focus)',
+                },
+
+                // Agent status colors (Restored)
                 'agent-idle': 'var(--color-agent-idle)',
                 'agent-thinking': 'var(--color-agent-thinking)',
                 'agent-speaking': 'var(--color-agent-speaking)',
                 'agent-error': 'var(--color-agent-error)',
                 'agent-success': 'var(--color-agent-success)',
 
-                // Accent colors
-                'accent-primary': 'var(--color-accent-primary)',
-                'accent-secondary': 'var(--color-accent-secondary)',
-
                 // Terminal colors
-                'terminal-green': 'var(--color-terminal-green)',
-                'terminal-red': 'var(--color-terminal-red)',
-                'terminal-yellow': 'var(--color-terminal-yellow)',
+                'terminal-green': 'var(--accent-success)',
+                'terminal-red': 'var(--accent-error)',
+                'terminal-yellow': 'var(--accent-warning)',
+
+                // Text
+                text: {
+                    DEFAULT: 'var(--text-primary)',
+                    secondary: 'var(--text-secondary)',
+                    tertiary: 'var(--text-tertiary)',
+                },
+
+                // Accents
+                accent: {
+                    primary: 'var(--accent-primary)',
+                    success: 'var(--accent-success)',
+                    warning: 'var(--accent-warning)',
+                    error: 'var(--accent-error)',
+                },
+
+                // Channel Status
+                channel: {
+                    online: 'var(--channel-online)',
+                    away: 'var(--channel-away)',
+                    busy: 'var(--channel-busy)',
+                    offline: 'var(--channel-offline)',
+                },
+
+                // Legacy / Aliases (for existing components)
+                background: 'var(--bg-canvas)',
+                surface: {
+                    DEFAULT: 'var(--bg-panel)',
+                    light: 'var(--bg-element)',
+                },
+                primary: 'var(--accent-primary)',
             },
             fontFamily: {
                 mono: ['JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', 'monospace'],

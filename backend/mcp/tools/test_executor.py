@@ -24,6 +24,12 @@ class TestExecutor:
     
     def __init__(self):
         self.test_history = []
+        
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for test tools"""
+        if tool_name == "run_tests":
+            return TEST_EXECUTOR_SCHEMA
+        return None
     
     async def run_tests(
         self,

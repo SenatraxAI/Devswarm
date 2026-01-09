@@ -82,6 +82,14 @@ class SecurityScanner:
     
     def __init__(self):
         self.scan_history = []
+        
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for security tools"""
+        if tool_name == "scan_security":
+            return SECURITY_SCAN_FILE_SCHEMA
+        elif tool_name == "scan_project_security":
+            return SECURITY_SCAN_PROJECT_SCHEMA
+        return None
     
     async def scan_file(
         self,

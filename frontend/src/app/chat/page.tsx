@@ -18,30 +18,13 @@ function ChatContent() {
     } = useNotifications(projectId);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-background transition-colors duration-500">
-            {/* Left Column: Agent Team */}
-            <div className="w-72 border-r border-surface-light flex-shrink-0">
-                <AgentPanel
-                    projectId={projectId}
-                    activeContext={activeContext}
-                    setActiveContext={setActiveContext}
-                    notifications={notifications}
-                />
-            </div>
-
-            {/* Center Column: Workspace (Chat/Code/Preview) */}
-            <div className="flex-1 flex flex-col min-w-0 border-r border-surface-light">
-                <Workspace
-                    projectId={projectId}
-                    activeContext={activeContext}
-                    markAsRead={markAsRead}
-                />
-            </div>
-
-            {/* Right Column: Terminal */}
-            <div className="w-80 flex-shrink-0 hidden xl:block">
-                <Terminal projectId={projectId} />
-            </div>
+        <div className="h-screen w-full overflow-hidden bg-background">
+            <Workspace
+                projectId={projectId}
+                activeContext={activeContext}
+                setActiveContext={setActiveContext}
+                markAsRead={markAsRead}
+            />
         </div>
     );
 }

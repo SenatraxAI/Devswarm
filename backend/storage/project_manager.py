@@ -81,7 +81,26 @@ class ProjectManager:
         
         self.projects[p_id] = project_data
         self.save()
+        self.projects[p_id] = project_data
+        self.save()
         return project_data
+
+    def create_project(self, parent_path: str, name: str) -> Dict[str, Any]:
+        """Create a new project directory and register it"""
+        abs_parent = os.path.abspath(parent_path)
+        if not os.path.exists(abs_parent):
+             raise FileNotFoundError(f"Parent path does not exist: {abs_parent}")
+            
+        project_path = os.path.join(abs_parent, name)
+        
+        # Create directory
+        try:
+            os.makedirs(project_path, exist_ok=False)
+        except FileExistsError:
+            raise FileExistsError(f"Directory already exists: {project_path}")
+            
+        # Register as open project
+        return self.open_project(project_path, name)
 
     def get_project(self, project_id: str) -> Optional[Dict[str, Any]]:
         """Get project details by ID"""

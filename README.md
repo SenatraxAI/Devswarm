@@ -130,6 +130,12 @@ Watch agents collaborate in real-time with terminal output and git-like commit h
 ### Tool Ecosystem
 30+ tools including filesystem operations, GitHub integration, testing, security scanning
 
+### ⚡ Smart Chat Interface (New)
+- **Fast Mode / Debate Mode**: Toggle between quick answers and deep multi-agent reasoning.
+- **Silent Tools**: Agents execute tools efficiently without cluttering the chat history.
+- **Double-Click Reply**: Quickly thread your conversations by double-clicking any message.
+- **Real-Time Dashboard**: Monitor system load and agent activity live.
+
 ### Event Sourcing
 Complete audit trail of all agent actions and decisions
 

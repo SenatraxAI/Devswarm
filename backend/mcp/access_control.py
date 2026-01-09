@@ -10,28 +10,23 @@ AGENT_PERMISSIONS = {
     "Sarah Chen": {
         "role": "Product Manager / Coordinator",
         "allowed_tools": [
-            # Read-only + docs
-            "search_docs", "web_search", "github",
+            "filesystem", "search_docs", "web_search", "github",
             "analyze_coverage", "analyze_complexity", "generate_docs"
         ]
     },
     "Marcus Williams": {
         "role": "Senior Software Architect",
         "allowed_tools": [
-            # Full analysis tools
-            "navigate_code", "analyze_complexity", "search_docs",
-            "github", "web_search", "generate_docs", "database",
-            "filesystem", "refactor_code"
+            "filesystem", "navigate_code", "analyze_complexity", "search_docs",
+            "github", "web_search", "generate_docs", "database"
         ]
     },
     "Elena Rodriguez": {
         "role": "Frontend Developer",
         "allowed_tools": [
-            # Frontend + testing
-            "filesystem", "run_tests", "manage_dependencies",
+            "filesystem", "execute_command", "run_tests", "manage_dependencies",
             "navigate_code", "detect_visual_regression", "generate_tests",
-            "execute_command", "web_search", "generate_docs",
-            "analyze_coverage", "lint_python"
+            "web_search", "generate_docs", "analyze_coverage", "lint_python"
         ]
     },
     "James Okonkwo": {
@@ -76,8 +71,7 @@ AGENT_PERMISSIONS = {
     "Oliver Hansen": {
         "role": "Technical Coordinator",
         "allowed_tools": [
-            # View-only + coordination
-            "search_docs", "web_search", "github",
+            "filesystem", "search_docs", "web_search", "github",
             "analyze_coverage", "generate_docs", "navigate_code"
         ]
     }
@@ -111,7 +105,16 @@ class AccessControl:
         """
         agent_perms = self.permissions.get(agent_name, {})
         allowed_tools = agent_perms.get("allowed_tools", [])
-        return tool_name in allowed_tools
+        
+        # Exact match
+        if tool_name in allowed_tools:
+            return True
+            
+        # Wildcard/Prefix matching for foundation categories
+        if "filesystem" in allowed_tools and tool_name.startswith("fs_"):
+            return True
+            
+        return False
     
     def get_agent_tools(self, agent_name: str) -> List[str]:
         """

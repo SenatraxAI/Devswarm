@@ -28,6 +28,12 @@ class LogAnalyzer:
     
     def __init__(self):
         self.analysis_history = []
+        
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for log tools"""
+        if tool_name == "analyze_logs":
+            return LOG_ANALYZER_SCHEMA
+        return None
     
     async def analyze_logs(
         self,

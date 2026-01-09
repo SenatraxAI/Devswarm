@@ -20,7 +20,8 @@ class MessageRouter:
         sender: str = "User", 
         project_id: str = "default",
         branch_name: str = "main",
-        thread_id: Optional[str] = None
+        thread_id: Optional[str] = None,
+        mode: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Route a message to mentioned agents within a project and branch context
@@ -114,7 +115,51 @@ class MessageRouter:
                 routing_info["should_notify"] = ["Sarah Chen"]
                 routing_info["routing_strategy"] = "default_pm"
         
+        # --- MODE DETECTION ---
+        if mode:
+            routing_info["mode"] = mode
+        else:
+            routing_info["mode"] = self._determine_mode(message)
+        
+        # If Debate Mode is active, ensure Leadership is present
+        if routing_info["mode"] == "debate":
+            # Add Marcus (Architect) and Sarah (PM) if not already there
+            current = set(routing_info["should_notify"])
+            current.add("Sarah Chen")
+            current.add("Marcus Williams")
+            routing_info["should_notify"] = list(current)
+            routing_info["routing_strategy"] = "debate_round_table"
+            
         return routing_info
+
+    def _determine_mode(self, message: str) -> str:
+        """
+        Determine if this is a 'fast' action or a 'debate' discussion.
+        """
+        msg = message.lower()
+        
+        # Debate / Deep Dive Triggers
+        debate_keywords = [
+            "why", "how", "explain", "analyze", "audit", "debug", 
+            "opinion", "suggest", "recommend", "best practice",
+            "architecture", "design", "pros and cons", "trade-off",
+            "should we", "what if", "review", "refactor"
+        ]
+        
+        if any(kw in msg for kw in debate_keywords):
+            return "debate"
+            
+        # Fast Action Triggers
+        action_keywords = [
+            "create", "make", "add", "update", "delete", "remove",
+            "install", "run", "execute", "fix", "change", "move"
+        ]
+        
+        if any(kw in msg for kw in action_keywords):
+            return "fast"
+            
+        return "fast" # Default to fast for simple queries
+
     
     def _determine_strategy(self, mentioned_agents: List[str]) -> str:
         """Determine routing strategy based on mentions"""

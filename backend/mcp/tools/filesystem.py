@@ -24,6 +24,18 @@ class FilesystemTool:
         """
         self.allowed_paths = allowed_paths or [os.getcwd()]
         self.operation_history = []
+        self.description = "Read, write, and manage files and directories"
+
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for a specific filesystem operation"""
+        mapping = {
+            "fs_read_file": FILESYSTEM_READ_SCHEMA,
+            "fs_write_file": FILESYSTEM_WRITE_SCHEMA,
+            "fs_list_directory": FILESYSTEM_LIST_SCHEMA,
+            "fs_search_files": FILESYSTEM_SEARCH_SCHEMA,
+            "fs_create_directory": {"name": "fs_create_directory", "description": "Create a new directory", "parameters": {"dir_path": {"type": "string", "required": True}}}
+        }
+        return mapping.get(tool_name)
 
     def set_context(self, root_path: Optional[str] = None, **kwargs):
         """Update allowed paths based on project context"""

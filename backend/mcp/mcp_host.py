@@ -115,7 +115,7 @@ class MCPHost:
             }
     
     def get_available_tools(self, agent: Optional[str] = None) -> List[Dict]:
-        """Get tools available to an agent"""
+        """Get tools available to an agent with full schemas"""
         tools = []
         all_tool_names = self.tool_registry.list_tools()
         
@@ -123,13 +123,9 @@ class MCPHost:
             if agent and not self.access_control.can_use_tool(agent, tool_name):
                 continue
             
-            tool_data = self.tool_registry.get_tool(tool_name)
-            if tool_data:
-                tool_impl, _ = tool_data
-                tools.append({
-                    "name": tool_name,
-                    "description": getattr(tool_impl, "description", f"Tool: {tool_name}")
-                })
+            schema = self.get_tool_schema(tool_name)
+            if schema:
+                tools.append(schema)
         
         return tools
     
@@ -140,6 +136,12 @@ class MCPHost:
             return None
         
         tool_impl, _ = tool_data
+        
+        # Check for individual tool schema first (best for multi-tool classes)
+        if hasattr(tool_impl, "get_schema"):
+            return tool_impl.get_schema(tool_name)
+            
+        # Check for broad SCHEMA attribute
         if hasattr(tool_impl, "SCHEMA"):
             return tool_impl.SCHEMA
             

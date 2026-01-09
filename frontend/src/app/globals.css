@@ -7,20 +7,69 @@
     --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-jetbrains-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-    /* Default Theme: Cyber Dark (OLED-ish) */
-    --color-bg: #02040a;
-    --color-surface: #0a0c10;
-    --color-surface-light: #161b22;
-    --color-agent-idle: #94a3b8;
-    --color-agent-thinking: #eab308;
-    --color-agent-speaking: #06b6d4;
-    --color-agent-error: #ef4444;
-    --color-agent-success: #22c55e;
-    --color-accent-primary: #8b5cf6;
-    --color-accent-secondary: #ec4899;
-    --color-terminal-green: #22c55e;
-    --color-terminal-red: #ef4444;
-    --color-terminal-yellow: #eab308;
+    /* Background layers (darkest to lightest) */
+    --bg-canvas: #0f172a;
+    /* Slate 900 - Main editor background */
+    --bg-panel: #1e293b;
+    /* Slate 800 - Sidebar and panel backgrounds */
+    --bg-element: #334155;
+    /* Slate 700 - Hover states, secondary elements */
+    --bg-elevated: #475569;
+    /* Slate 600 - Dropdowns, modals, popovers */
+
+    /* Borders and dividers */
+    --border-subtle: #1e293b;
+    /* Subtle internal borders */
+    --border-default: #334155;
+    /* Standard borders between panels */
+    --border-focus: #3b82f6;
+    /* Focus rings for interactive elements */
+
+    /* Text colors */
+    --text-primary: #f8fafc;
+    /* Slate 50 - Primary content */
+    --text-secondary: #94a3b8;
+    /* Slate 400 - Labels, metadata */
+    --text-tertiary: #64748b;
+    /* Slate 500 - Disabled, placeholders */
+
+    /* Accent colors */
+    --accent-primary: #3b82f6;
+    /* Royal Blue - Primary actions, active states */
+    --accent-success: #22c55e;
+    /* Green - Connected status, success states */
+    --accent-warning: #f59e0b;
+    /* Amber - Warnings, pending states */
+    --accent-error: #ef4444;
+    /* Red - Errors, disconnected status */
+
+    /* Channel indicators */
+    --channel-online: #22c55e;
+    --channel-away: #f59e0b;
+    --channel-busy: #ef4444;
+    --channel-offline: #64748b;
+
+    /* Agent Status Colors (Mapped to Palette) */
+    --color-agent-idle: var(--text-secondary);
+    --color-agent-thinking: var(--accent-warning);
+    --color-agent-speaking: var(--accent-primary);
+    --color-agent-error: var(--accent-error);
+    --color-agent-success: var(--accent-success);
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+
+    /* Legacy Map (Aliases for backwards compatibility if needed, or just new ones) */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
   }
 
   /* Deep Ocean Theme (Slate) */

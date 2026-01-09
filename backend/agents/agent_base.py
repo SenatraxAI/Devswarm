@@ -43,10 +43,18 @@ class AgentSession:
         return self.messages[-count:] if len(self.messages) > count else self.messages
     
     def clear_old_messages(self, keep_count: int = 50):
-        """Clear old messages to manage context window"""
+        """
+        Manage context window by pruning old messages
+        Preserves the first message (if system) and the last N messages
+        """
         if len(self.messages) > keep_count:
-            # Keep system prompt and recent messages
-            self.messages = self.messages[-keep_count:]
+            # Always keep session start / system context if implicit
+            # In this architecture, system prompt is separate, but we might have initial user context
+            recent = self.messages[-keep_count:]
+            
+            # If we had important initial context, we might want to keep it
+            # For now, simple sliding window is safer than indiscriminate truncation
+            self.messages = recent
 
 
 class Agent:
@@ -122,7 +130,7 @@ class Agent:
             
             if new_prompt:
                 self.system_prompt = new_prompt
-                print(f"🔄 Reloaded personality for {self.name}")
+                # print(f"🔄 Reloaded personality for {self.name}") # Reduced log noise
                 
                 # RECORD IDENTITY ANCHOR in Event Store + Vector Store
                 if self.team_memory:
@@ -132,6 +140,50 @@ class Agent:
         except Exception as e:
             print(f"❌ Failed to reload personality for {self.name}: {e}")
         return False
+
+    def _get_project_stack(self) -> str:
+        """Read manifest files to determine tech stack"""
+        if not hasattr(self, "root_path") or not self.root_path:
+            return "Unknown Stack"
+            
+        stack_info = []
+        import os
+        
+        # Check package.json (Node/JS)
+        pkg_path = os.path.join(self.root_path, "package.json")
+        if os.path.exists(pkg_path):
+            try:
+                with open(pkg_path, "r") as f:
+                    data = json.load(f)
+                    deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
+                    # Summary of key deps
+                    key_deps = [k for k in deps.keys() if k in [
+                        "react", "next", "vue", "angular", "svelte", 
+                        "express", "nestjs", "tailwindcss", "typescript",
+                        "redux", "zustand", "prisma", "mongoose"
+                    ]]
+                    stack_info.append(f"Node.js Project: {', '.join(key_deps)}")
+            except:
+                pass
+
+        # Check requirements.txt (Python)
+        req_path = os.path.join(self.root_path, "requirements.txt")
+        if os.path.exists(req_path):
+            try:
+                with open(req_path, "r") as f:
+                    content = f.read().lower()
+                    u_libs = []
+                    if "fastapi" in content: u_libs.append("FastAPI")
+                    if "flask" in content: u_libs.append("Flask")
+                    if "django" in content: u_libs.append("Django")
+                    if "pandas" in content: u_libs.append("Pandas")
+                    if "torch" in content: u_libs.append("PyTorch")
+                    if u_libs:
+                        stack_info.append(f"Python Project: {', '.join(u_libs)}")
+            except:
+                pass
+                
+        return "\n".join(stack_info) if stack_info else "Standard Environment"
 
     async def process_message(self, user_message: str, websocket=None, branch_name: str = "main", thread_id: Optional[str] = None) -> str:
         """
@@ -218,12 +270,14 @@ class Agent:
                 # UI MESSAGE LOGIC:
                 should_send = False
                 if not tool_output:
-                    # Final response must always be sent
+                    # Final response must always be sent (Pure conversational turn)
                     should_send = True
-                elif clean_response and clean_response not in ["Working on it...", "On it.", "One moment."]:
-                    # Intermediate response with actual content - only send if new
-                    if clean_response != pending_message:
-                        should_send = True
+                else:
+                    # TOOL EXECUTION TURN
+                    # Suppress the text part to prevent "I will now..." repetitiveness.
+                    # The UI status "Executing tool..." is sufficient feedback.
+                    should_send = False
+                    print(f"🤫 Silencing agent text during tool execution: {clean_response[:50]}...")
 
                 print(f"📡 SENDING TO UI? {should_send} | Agent: {self.name} | Content: {clean_response[:50]}...")
 
@@ -329,6 +383,13 @@ class Agent:
             instructions.append(f"You're working on '{project_name}' with {user_name}.")
             instructions.append(f"Project root: `{root_path}`")
             instructions.append(f"OS: Windows (use backslashes for paths, e.g. `backend\\agents\\agent_base.py`)")
+            
+            # INJECT REALITY (Tech Stack)
+            tech_stack = self._get_project_stack()
+            instructions.append(f"\n### PROJECT REALITY (DETECTED):")
+            instructions.append(f"The code actually uses:\n{tech_stack}")
+            instructions.append("TRUST THIS STACK OVER YOUR TRAINING DATA.")
+            
         else:
             instructions.append("You're in a team workspace.")
 
@@ -354,29 +415,45 @@ class Agent:
         if self.mcp_host:
             tools = self.mcp_host.get_available_tools(self.name)
             if tools:
-                tool_list = "\n".join([f"- {t['name']}: {t['description']}" for t in tools])
+                # Format schemas as a JSON-like block for the agent
+                import json
+                tool_specs = []
+                for t in tools:
+                    spec = {
+                        "name": t.get("name"),
+                        "description": t.get("description"),
+                        "parameters": t.get("parameters", {})
+                    }
+                    tool_specs.append(spec)
+                
+                tool_json = json.dumps(tool_specs, indent=2)
                 instructions.append(f"""
 ### AVAILABLE TOOLS:
-{tool_list}
+You have access to the following MCP tools. Use them to perform technical tasks.
+```json
+{tool_json}
+```
 
 ### TOOL PROTOCOL:
 To use a tool, you MUST output: <tool_code>tool_name(arg="value")</tool_code>
 Wait for the result. Do not guess what happens next.
+""")
+                instructions.append("""
+### COLLABORATION PROTOCOL:
+- Mentions (e.g., @Agent Name) are part of NATURAL conversation.
+- **NEVER** wrap a mention or a symbol starting with '@' inside <tool_code> tags.
+- To get help from an expert, just mention them naturally (e.g., "Hey @James Okonkwo, what do you think?").
 
 ### CRITICAL: WHEN TO USE TOOLS
 ONLY use tools when you NEED to:
 - Analyze actual code files (navigate_code, fs_read_file)
-- Search documentation (search_docs, web_search)
 - Run tests or commands (run_tests, execute_command)
 - Modify files (fs_write_file)
 
 DO NOT use tools for:
-- Greetings ("hi", "hello")
-- General questions ("what should we do?", "how's it going?")
-- Casual conversation
-- Status updates
-
-If the user just wants to chat, CHAT. Tools are for work, not politeness.
+- Greetings, status updates, or casual chat.
+- Tagging other agents.
+- **WEB SEARCH**: DO NOT USE `web_search` unless the user explicitly asks for "external research" or "search the web". For "how to" questions, use your internal knowledge + file access.
 """)
 
         # 2. BUILD CONVERSATION HISTORY
@@ -448,6 +525,12 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
             return None
         
         tool_call_str = match.group(1).strip()
+        
+        # SAFETY CHECK: If it's a mention, ignore it
+        if tool_call_str.startswith('@'):
+            print(f"🚫 Ignoring mention mistaken for tool: {tool_call_str}")
+            return None
+            
         print(f"🛠️ Detected Tool Call: {tool_call_str}")
         
         try:
@@ -473,6 +556,21 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
                 'navigate_code': ['dir_path'],
                 'search_docs': ['query'],
                 'web_search': ['query'],
+                'lint_python': ['file_path'],
+                'run_tests': ['test_path'],
+                'manage_dependencies': ['action', 'package_name'],
+                'database': ['query'],
+                'scan_security': ['path'],
+                'analyze_coverage': ['path'],
+                'generate_tests': ['file_path'],
+                'analyze_complexity': ['file_path'],
+                'scan_dependencies': ['path'],
+                'generate_docs': ['path'],
+                'analyze_logs': ['log_path'],
+                'profile_performance': ['script_path'],
+                'refactor_code': ['path', 'instruction'],
+                'generate_property_tests': ['file_path'],
+                'detect_visual_regression': ['url'],
             }
             
             if expr.args and len(expr.args) > 0:
@@ -508,22 +606,30 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
                     kwargs[arg_name] = [elt.value for elt in keyword.value.elts]
             
             # Notify UI via WebSocket
+            project_id = self.event_log.project_id if self.event_log else "default"
             if websocket:
                 await websocket.send_json({
                     "type": "agent_status",
                     "data": {
                         "agent": self.name,
                         "status": f"Executing {tool_name}...",
-                        "project_id": self.event_log.project_id if self.event_log else "default"
+                        "project_id": project_id
+                    }
+                })
+                # Emit Terminal Output for the IDE
+                await websocket.send_json({
+                    "type": "terminal_output",
+                    "data": {
+                        "type": "command",
+                        "content": f"{self.name} > {tool_name}({str(kwargs)})",
+                        "project_id": project_id
                     }
                 })
             
-            # Execute Tool
             session.status = "working"
             result = await self.use_tool(tool_name, kwargs)
             
-            # Format output
-            # Format as clean, readable text (NOT raw JSON!)
+            # Format output as clean, readable text
             if isinstance(result, dict) and result.get("status") == "success":
                 output_str = f"Tool '{tool_name}' completed successfully."
             elif isinstance(result, dict) and result.get("status") == "error":
@@ -531,8 +637,19 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
             else:
                 output_str = f"Tool '{tool_name}' executed. Result: {str(result)[:200]}"
             
-            # Add to memory as OBSERVATION (Models treat SYSTEM as rules, OBSERVATION as tool results)
+            # Add to memory as OBSERVATION
             session.add_message("system", output_str)
+            
+            # Emit Success/Error to Terminal
+            if websocket:
+                await websocket.send_json({
+                    "type": "terminal_output",
+                    "data": {
+                        "type": "success" if "success" in output_str.lower() else "output",
+                        "content": output_str,
+                        "project_id": project_id
+                    }
+                })
             
             return output_str
             
@@ -540,6 +657,16 @@ If the user just wants to chat, CHAT. Tools are for work, not politeness.
             error_msg = f"Tool execution error: {str(e)}"
             print(f"❌ Tool Error: {error_msg}")
             session.add_message("system", error_msg)
+            
+            if websocket:
+                await websocket.send_json({
+                    "type": "terminal_output",
+                    "data": {
+                        "type": "error",
+                        "content": error_msg,
+                        "project_id": self.event_log.project_id if self.event_log else "default"
+                    }
+                })
             return error_msg
     
     async def use_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:

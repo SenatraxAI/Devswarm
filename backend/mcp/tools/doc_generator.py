@@ -17,6 +17,12 @@ class DocumentationGenerator:
     
     def __init__(self):
         self.generation_history = []
+        
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for documentation tools"""
+        if tool_name == "generate_documentation":
+            return DOC_GENERATOR_SCHEMA
+        return None
     
     async def generate_docs(
         self,

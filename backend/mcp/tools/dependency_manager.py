@@ -24,6 +24,14 @@ class DependencyManager:
     
     def __init__(self):
         self.install_history = []
+        
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for dependency tools"""
+        if tool_name == "install_package":
+            return DEPENDENCY_INSTALL_SCHEMA
+        elif tool_name == "list_dependencies":
+            return DEPENDENCY_LIST_SCHEMA
+        return None
     
     async def install_package(
         self,

@@ -38,6 +38,24 @@ async def open_project(req: ProjectOpenRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+class ProjectCreateRequest(BaseModel):
+    parent_path: str
+    name: str
+
+@router.post("/create", response_model=ProjectResponse)
+async def create_project(req: ProjectCreateRequest):
+    """Create a new project directory and open it"""
+    try:
+        project = project_manager.create_project(req.parent_path, req.name)
+        return project
+    except FileExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/pick")
 async def pick_folder():
     """Triggers native OS folder picker with PowerShell bridge"""

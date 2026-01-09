@@ -20,8 +20,10 @@ class CodeNavigator:
     
     async def get_project_structure(
         self,
-        dir_path: str,
-        max_depth: int = 3
+        dir_path: Optional[str] = None,
+        max_depth: int = 3,
+        file_path: Optional[str] = None,
+        path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Generate project structure tree
@@ -37,6 +39,8 @@ class CodeNavigator:
                 "stats": dict
             }
         """
+        # Handle aliases
+        dir_path = dir_path or file_path or path
         try:
             path = Path(dir_path)
             if not path.exists():

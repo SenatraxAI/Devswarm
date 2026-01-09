@@ -15,7 +15,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 interface Project {
-    id: str;
+    id: string;
     name: string;
     root_path: string;
     last_accessed: number;
@@ -89,7 +89,7 @@ export default function ProjectHub() {
 
             // Switch to the project and go to chat
             localStorage.setItem('active_project_id', project.id);
-            router.push('/chat');
+            router.push(`/chat?p=${project.id}`);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -100,7 +100,7 @@ export default function ProjectHub() {
     const handleSwitchProject = (project: Project) => {
         localStorage.setItem('active_project_id', project.id);
         fetch(`http://localhost:8000/api/v1/projects/${project.id}/touch`, { method: 'POST' });
-        router.push('/chat');
+        router.push(`/chat?p=${project.id}`);
     };
 
     if (loading) {
@@ -125,63 +125,68 @@ export default function ProjectHub() {
                 </div>
             </div>
 
-            {/* Open New Project */}
-            <div className="bg-surface border border-surface-light rounded-2xl p-6 mb-12 shadow-xl shadow-black/20">
-                <div className="flex items-center space-x-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center">
-                        <Plus className="w-5 h-5 text-accent-primary" />
-                    </div>
-                    <h2 className="text-xl font-semibold text-white">Open Local Folder</h2>
+            {/* Open / Create Project Card */}
+            <div className="bg-surface border border-surface-light rounded-2xl overflow-hidden mb-12 shadow-xl shadow-black/20">
+                <div className="flex border-b border-surface-light">
+                    <button
+                        onClick={() => { setIsOpening(false); setNewPath(''); }}
+                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-wider transition-colors ${!isOpening ? 'bg-surface text-accent-primary border-b-2 border-accent-primary' : 'bg-surface-light/30 text-gray-500 hover:text-white'}`}
+                    >
+                        Open Existing
+                    </button>
+                    <button
+                        onClick={() => { setIsOpening(true); setNewPath(''); }}
+                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-wider transition-colors ${isOpening ? 'bg-surface text-accent-primary border-b-2 border-accent-primary' : 'bg-surface-light/30 text-gray-500 hover:text-white'}`}
+                    >
+                        Create New
+                    </button>
                 </div>
 
-                <form onSubmit={handleOpenProject} className="space-y-4">
-                    <div className="flex space-x-2">
-                        <div className="relative group flex-1">
-                            <FolderOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-accent-primary transition-colors" />
-                            <input
-                                type="text"
-                                value={newPath}
-                                onChange={(e) => setNewPath(e.target.value)}
-                                placeholder="Paste absolute path or click Browse"
-                                className="w-full bg-background border border-surface-light p-4 pl-12 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50 transition-all font-mono text-sm"
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleBrowseFolders}
-                            disabled={isOpening}
-                            className="px-6 bg-surface-light hover:bg-white/10 text-white font-medium rounded-xl border border-surface-light transition-all flex items-center space-x-2 whitespace-nowrap active:scale-95"
-                        >
-                            <Search className="w-4 h-4" />
-                            <span>Browse...</span>
-                        </button>
-                    </div>
-
-                    {error && (
-                        <div className="flex items-center space-x-2 text-red-400 text-sm bg-red-400/5 p-3 rounded-lg border border-red-400/20">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>{error}</span>
-                        </div>
+                <div className="p-6">
+                    {/* OPEN EXISTING MODE */}
+                    {!isOpening && (
+                        <form onSubmit={handleOpenProject} className="space-y-4">
+                            <div className="flex items-center space-x-3 mb-2">
+                                <div className="p-2 rounded-lg bg-accent-primary/10">
+                                    <FolderOpen className="w-5 h-5 text-accent-primary" />
+                                </div>
+                                <h2 className="text-lg font-semibold text-white">Open Folder</h2>
+                            </div>
+                            <div className="flex space-x-2">
+                                <div className="relative group flex-1">
+                                    <input
+                                        type="text"
+                                        value={newPath}
+                                        onChange={(e) => setNewPath(e.target.value)}
+                                        placeholder="Path to existing project..."
+                                        className="w-full bg-background border border-surface-light p-4 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50 transition-all font-mono text-sm"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleBrowseFolders}
+                                    className="px-6 bg-surface-light hover:bg-white/10 text-white font-medium rounded-xl border border-surface-light transition-all flex items-center space-x-2 whitespace-nowrap"
+                                >
+                                    <Search className="w-4 h-4" />
+                                    <span>Browse...</span>
+                                </button>
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!newPath}
+                                className="w-full bg-accent-primary hover:bg-accent-primary-hover disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center space-x-2"
+                            >
+                                <ExternalLink className="w-5 h-5" />
+                                <span>Open Project</span>
+                            </button>
+                        </form>
                     )}
 
-                    <button
-                        type="submit"
-                        disabled={isOpening || !newPath}
-                        className="w-full bg-accent-primary hover:bg-accent-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-accent-primary/20 active:scale-[0.98] flex items-center justify-center space-x-2"
-                    >
-                        {isOpening ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>Scanning Project...</span>
-                            </>
-                        ) : (
-                            <>
-                                <ExternalLink className="w-5 h-5" />
-                                <span>Open Project Folder</span>
-                            </>
-                        )}
-                    </button>
-                </form>
+                    {/* CREATE NEW MODE */}
+                    {isOpening && (
+                        <CreateProjectForm onCancel={() => setIsOpening(false)} onCreated={fetchProjects} />
+                    )}
+                </div>
             </div>
 
             {/* Recent Projects */}
@@ -234,5 +239,112 @@ export default function ProjectHub() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function CreateProjectForm({ onCancel, onCreated }: { onCancel: () => void, onCreated: () => void }) {
+    const [name, setName] = useState('');
+    const [parentPath, setParentPath] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+
+    const handleBrowse = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/v1/projects/pick', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success' && data.path) {
+                setParentPath(data.path);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        try {
+            const res = await fetch('http://localhost:8000/api/v1/projects/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, parent_path: parentPath })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.detail || 'Failed to create project');
+            }
+
+            const project = await res.json();
+            localStorage.setItem('active_project_id', project.id);
+            onCreated(); // Refresh list
+            router.push(`/chat?p=${project.id}`);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleCreate} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center space-x-3 mb-2">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                    <Plus className="w-5 h-5 text-green-500" />
+                </div>
+                <h2 className="text-lg font-semibold text-white">Create New Project</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                    <label className="text-xs text-gray-400 uppercase font-bold tracking-wider">Project Name</label>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="My Awesome App"
+                        className="w-full bg-background border border-surface-light p-4 rounded-xl text-white focus:outline-none focus:border-green-500 transition-all"
+                    />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-xs text-gray-400 uppercase font-bold tracking-wider">Parent Folder</label>
+                    <div className="flex space-x-2">
+                        <input
+                            type="text"
+                            value={parentPath}
+                            readOnly
+                            placeholder="Select location..."
+                            className="flex-1 bg-background/50 border border-surface-light p-4 rounded-xl text-gray-400 cursor-not-allowed"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleBrowse}
+                            className="px-4 bg-surface-light hover:bg-white/10 text-white rounded-xl transition-all"
+                        >
+                            Browse
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {error && (
+                <div className="text-red-400 text-sm bg-red-400/5 p-3 rounded-lg border border-red-400/20 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    {error}
+                </div>
+            )}
+
+            <button
+                type="submit"
+                disabled={!name || !parentPath || loading}
+                className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
+            >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                <span>Create & Open Project</span>
+            </button>
+        </form>
     );
 }

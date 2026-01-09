@@ -89,10 +89,16 @@ async def health():
 from api.event_routes import router as event_router
 from api.project_routes import router as project_router
 from api.settings_routes import router as settings_router
+from api.ide_routes import router as ide_router
+
+from api.monitoring import router as monitoring_router
+
 app.include_router(router, prefix="/api/v1")
 app.include_router(event_router, prefix="/api/v1")
 app.include_router(project_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
+app.include_router(ide_router, prefix="/api/v1")
+app.include_router(monitoring_router, prefix="/api/v1/status")
 
 
 @app.websocket("/api/v1/ws")
@@ -157,6 +163,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
             branch_name = data.get("branch_name", "main")
             thread_id = data.get("thread_id")
+            mode = data.get("mode") # explicit mode override
             msg_type = data.get("type")
             
             # Unified User/Direct Message Echo Logic
@@ -188,7 +195,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             project_id=project_id,
                             branch_name=branch_name,
                             thread_id=thread_id,
-                            websocket=websocket
+                            websocket=websocket,
+                            mode=mode
                         )
                     )
                 else:

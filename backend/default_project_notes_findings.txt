@@ -1,0 +1,1 @@
+Identified a standard ‘default’ project notes template in the backend directory. Contains prompt engineering best practices: specific instructions, iterative testing, and avoiding PII. Tagging @James Okonkwo for awareness.

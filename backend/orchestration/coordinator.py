@@ -111,18 +111,8 @@ class AgentCoordinator:
             agent.root_path = root_path
             session_agents[name] = agent
             
-            # Configure Tool Permissions (Role-Based Access Control)
-            allowed_tools = []
-            if agent_id == "sarah_chen":
-                allowed_tools = ["web_search", "fs_read_file", "fs_write_file", "fs_list_directory", "github"]
-            elif agent_id == "marcus_williams":
-                allowed_tools = ["navigate_code", "search_docs"]
-            elif agent_id in ["james_okonkwo", "elena_rodriguez", "priya_sharma", "david_kim", "aisha_patel"]:
-                allowed_tools = ["fs_read_file", "fs_write_file", "fs_list_directory", "fs_search_files", "fs_create_directory", "lint_python", "run_tests", "navigate_code", "execute_command"]
-            elif agent_id == "oliver_hansen":
-                allowed_tools = ["fs_read_file", "fs_write_file", "generate_docs"]
-            
-            self.mcp_host.set_agent_permissions(name, allowed_tools)
+            # Permissions are managed centrally by the MCPHost's AccessControl system
+            # which is initialized with the standard per-agent tool matrix.
             
         self.project_sessions[project_id] = session_agents
         return session_agents
@@ -140,7 +130,8 @@ class AgentCoordinator:
         project_id: str = "default", 
         branch_name: str = "main",
         thread_id: Optional[str] = None,
-        websocket: Optional[Any] = None
+        websocket: Optional[Any] = None,
+        mode: Optional[str] = None
     ) -> Dict:
         """Process a user message within a specific project and branch context"""
         agents = self.get_agents(project_id)
@@ -155,7 +146,8 @@ class AgentCoordinator:
             sender="User", 
             project_id=project_id,
             branch_name=branch_name,
-            thread_id=thread_id
+            thread_id=thread_id,
+            mode=mode
         )
         
         # Check if this should trigger a debate
@@ -195,10 +187,46 @@ class AgentCoordinator:
             thread_id=thread_id
         )
 
+        # --- DEEP CONTEXT GATHERING (Owl Mode) ---
+        context_prefix = ""
+        if routing_info.get("mode") == "debate":
+            print("🦉 Owl Mode: Gathering deep context...")
+            # 1. Get File Tree (Depth 2)
+            try:
+                # We can use the first agent to access tools
+                first_agent = list(agents.values())[0]
+                if first_agent.mcp_host:
+                    print(f"   Root Path: {first_agent.root_path}")
+                    # Quick listings to give map
+                    try:
+                        # Use list_directory directly if possible, or via tool
+                        # Using depth=2 to prevent massive outputs
+                        tree_result = await first_agent.mcp_host.execute_tool(
+                            "fs_list_directory", 
+                            {"dir_path": first_agent.root_path, "recursive": True},
+                            first_agent.name
+                        )
+                        # print(f"   Tree Result: {str(tree_result)[:200]}...") # Debug log
+                        
+                        if tree_result.get("status") == "success":
+                            context_prefix += f"\n[SYSTEM CONTEXT: PROJECT MAP]\n{str(tree_result.get('result'))[:2000]}\n"
+                        else:
+                            print(f"❌ Context gathering failed: {tree_result}")
+                    except Exception as tool_err:
+                        print(f"❌ Tool execution error: {tool_err}")
+
+            except Exception as e:
+                print(f"❌ Failed to gather context: {e}")
+                
+            context_prefix += "\n[SYSTEM INSTRUCTION: DEBATE MODE ACTIVE]\n- The Project Map above shows the ACTUAL file structure. DO NOT ask for it again.\n- READ ONLY CRITICAL FILES (Max 2-3). Do NOT read every file.\n- SYNTHESIZE your findings immediately after reading.\n- If you have enough info, propose a solution or ask the user for confirmation.\n"
+
         # Notify mentioned agents
         if routing_info["should_notify"]:
+            # Prepend context to the message for the agents
+            enhanced_message = f"{context_prefix}\n{message}" if context_prefix else message
+            
             responses = await message_router.notify_mentioned_agents(
-                message,
+                enhanced_message,
                 routing_info["should_notify"],  # FIX: Use should_notify, not mentioned_agents
                 sender="User",
                 project_id=project_id,

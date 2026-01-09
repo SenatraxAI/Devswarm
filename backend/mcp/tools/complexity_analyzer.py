@@ -3,7 +3,7 @@ Complexity Analyzer - Code complexity metrics
 Measures cyclomatic complexity, cognitive complexity, coupling/cohesion
 """
 import ast
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 
 
@@ -15,6 +15,12 @@ class ComplexityAnalyzer:
     
     def __init__(self):
         self.analysis_history = []
+        
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for complexity tools"""
+        if tool_name == "analyze_complexity":
+            return COMPLEXITY_ANALYZE_SCHEMA
+        return None
     
     async def analyze_complexity(
         self,

@@ -16,6 +16,16 @@ class RuffLinter:
     
     def __init__(self):
         self.lint_history = []
+        self.description = "Lint and format Python code with Ruff"
+
+    def get_schema(self, tool_name: str) -> Optional[Dict]:
+        """Get schema for a specific ruff operation"""
+        mapping = {
+            "lint_python": RUFF_LINTER_SCHEMA, # Registry name is lint_python
+            "ruff_lint": RUFF_LINTER_SCHEMA,
+            "ruff_format": RUFF_FORMAT_SCHEMA
+        }
+        return mapping.get(tool_name)
     
     async def lint(
         self,
