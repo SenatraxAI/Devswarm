@@ -136,6 +136,9 @@ Watch agents collaborate in real-time with terminal output and git-like commit h
 - **Double-Click Reply**: Quickly thread your conversations by double-clicking any message.
 - **Real-Time Dashboard**: Monitor system load and agent activity live.
 
+### 👤 Personal Identity Integration (New)
+Define your own role, title, and bio within the swarm. The agents will recognize you by name and role (e.g. "Lead Developer"), adapting their responses to your expertise level and preferences.
+
 ### Event Sourcing
 Complete audit trail of all agent actions and decisions
 
@@ -196,4 +199,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Status**: Phase 4 - Project Dashboard & Visualization ✅ COMPLETE
+**Status**: Phase 5/6 - Real-time Dashboard, Debate Mode & Settings Persistence ✅ COMPLETE

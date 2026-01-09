@@ -173,14 +173,15 @@ export default function SettingsPage() {
         }
     }
 
-    const saveProfile = async () => {
-        if (!profile) return
+    const saveProfile = async (profileOverride?: UserProfile) => {
+        const profileToSave = profileOverride || profile
+        if (!profileToSave) return
         setIsSavingProfile(true)
         try {
             const res = await fetch(`${API_URL}/settings/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profile)
+                body: JSON.stringify(profileToSave)
             })
             if (res.ok) {
                 setTimeout(() => setIsSavingProfile(false), 500)
@@ -254,7 +255,7 @@ export default function SettingsPage() {
                                             type="text"
                                             value={profile.name}
                                             onChange={e => setProfile({ ...profile, name: e.target.value })}
-                                            onBlur={saveProfile}
+                                            onBlur={() => saveProfile()}
                                             className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
                                         />
                                     </div>
@@ -266,7 +267,7 @@ export default function SettingsPage() {
                                             type="text"
                                             value={profile.role}
                                             onChange={e => setProfile({ ...profile, role: e.target.value })}
-                                            onBlur={saveProfile}
+                                            onBlur={() => saveProfile()}
                                             className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
                                         />
                                     </div>
@@ -278,7 +279,7 @@ export default function SettingsPage() {
                                             type="text"
                                             value={profile.company || ''}
                                             onChange={e => setProfile({ ...profile, company: e.target.value })}
-                                            onBlur={saveProfile}
+                                            onBlur={() => saveProfile()}
                                             className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
                                         />
                                     </div>
@@ -292,7 +293,7 @@ export default function SettingsPage() {
                                         <textarea
                                             value={profile.bio || ''}
                                             onChange={e => setProfile({ ...profile, bio: e.target.value })}
-                                            onBlur={saveProfile}
+                                            onBlur={() => saveProfile()}
                                             className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all h-[155px] resize-none font-medium"
                                             placeholder="e.g. Senior Software Architect focused on high-performance backends..."
                                         />
@@ -316,8 +317,7 @@ export default function SettingsPage() {
                                                 preferences: { ...profile.preferences, natural_grammar: !profile.preferences.natural_grammar }
                                             };
                                             setProfile(newProfile);
-                                            // Trigger save immediately for toggles
-                                            setTimeout(() => saveProfile(), 0);
+                                            saveProfile(newProfile);
                                         }}
                                         className={`w-10 h-5 rounded-full transition-colors relative ${profile.preferences.natural_grammar ? 'bg-green-500' : 'bg-gray-700'}`}
                                     >
@@ -330,8 +330,9 @@ export default function SettingsPage() {
                                     <select
                                         value={profile.preferences.agent_style}
                                         onChange={e => {
-                                            setProfile({ ...profile, preferences: { ...profile.preferences, agent_style: e.target.value } });
-                                            setTimeout(() => saveProfile(), 0);
+                                            const newProfile = { ...profile, preferences: { ...profile.preferences, agent_style: e.target.value } };
+                                            setProfile(newProfile);
+                                            saveProfile(newProfile);
                                         }}
                                         className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
                                     >
@@ -347,9 +348,10 @@ export default function SettingsPage() {
                                         value={profile.preferences.theme}
                                         onChange={e => {
                                             const newTheme = e.target.value as any;
-                                            setProfile({ ...profile, preferences: { ...profile.preferences, theme: newTheme } });
+                                            const newProfile = { ...profile, preferences: { ...profile.preferences, theme: newTheme } };
+                                            setProfile(newProfile);
                                             setGlobalTheme(newTheme);
-                                            setTimeout(() => saveProfile(), 0);
+                                            saveProfile(newProfile);
                                         }}
                                         className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
                                     >

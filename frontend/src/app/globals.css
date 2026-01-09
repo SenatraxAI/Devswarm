@@ -74,20 +74,34 @@
 
   /* Deep Ocean Theme (Slate) */
   .theme-slate {
-    --color-bg: #0f172a;
-    --color-surface: #1e293b;
-    --color-surface-light: #334155;
-    --color-accent-primary: #38bdf8;
-    --color-accent-secondary: #0ea5e9;
+    --bg-canvas: #0f172a;
+    --bg-panel: #1e293b;
+    --bg-element: #334155;
+    --bg-elevated: #475569;
+    --text-primary: #f8fafc;
+    --accent-primary: #38bdf8;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
   }
 
   /* Neon Purple Theme */
   .theme-purple {
-    --color-bg: #0f0720;
-    --color-surface: #1a0b2e;
-    --color-surface-light: #2d124d;
-    --color-accent-primary: #d8b4fe;
-    --color-accent-secondary: #a855f7;
+    --bg-canvas: #0f0720;
+    --bg-panel: #1a0b2e;
+    --bg-element: #2d124d;
+    --bg-elevated: #4c1d95;
+    --text-primary: #e9d5ff;
+    --accent-primary: #d8b4fe;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
   }
 
   body {
