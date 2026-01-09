@@ -104,6 +104,105 @@
     --color-accent-primary: var(--accent-primary);
   }
 
+  /* Emerald Matrix Theme (Hacker) */
+  .theme-matrix {
+    --bg-canvas: #020402;
+    --bg-panel: #0a140a;
+    --bg-element: #142914;
+    --bg-elevated: #1f3d1f;
+    --text-primary: #e0fce0;
+    --accent-primary: #00ff41;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
+  }
+
+  /* Sunset Amber Theme (Warm) */
+  .theme-sunset {
+    --bg-canvas: #1c1008;
+    --bg-panel: #2c1810;
+    --bg-element: #4a2818;
+    --bg-elevated: #693822;
+    --text-primary: #fff8f0;
+    --accent-primary: #ff9d00;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
+  }
+
+  /* Midnight Navy Theme (Replacing risky Light Mode) */
+  .theme-navy {
+    --bg-canvas: #020617;
+    --bg-panel: #0f172a;
+    --bg-element: #1e293b;
+    --bg-elevated: #334155;
+    --text-primary: #f8fafc;
+    --accent-primary: #3b82f6;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
+  }
+
+  /* Glacier Light Theme (Professional) */
+  .theme-glacier {
+    --bg-canvas: #f0f9ff;
+    --bg-panel: #ffffff;
+    --bg-element: #e0f2fe;
+    --bg-elevated: #bae6fd;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --accent-primary: #0ea5e9;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
+  }
+
+  /* Obsidian Theme (High Contrast Black & White) */
+  .theme-obsidian {
+    --bg-canvas: #000000;
+    --bg-panel: #000000;
+    --bg-element: #1a1a1a;
+    --bg-elevated: #333333;
+    --text-primary: #ffffff;
+    --text-secondary: #d4d4d4;
+    --accent-primary: #ffffff;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
+  }
+
+  /* Luxury Theme (Gold & White) */
+  .theme-luxury {
+    --bg-canvas: #fafaf9;
+    --bg-panel: #ffffff;
+    --bg-element: #f5f5f4;
+    --bg-elevated: #e7e5e4;
+    --text-primary: #1c1917;
+    --text-secondary: #44403c;
+    --accent-primary: #d97706;
+
+    /* Legacy aliases sync */
+    --color-bg: var(--bg-canvas);
+    --color-surface: var(--bg-panel);
+    --color-surface-light: var(--bg-element);
+    --color-accent-primary: var(--accent-primary);
+  }
+
   body {
     @apply bg-background text-white;
   }

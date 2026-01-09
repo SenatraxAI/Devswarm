@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { API_URL } from '@/config'
 
-type Theme = 'dark' | 'slate' | 'purple'
+type Theme = 'dark' | 'slate' | 'purple' | 'matrix' | 'sunset' | 'navy' | 'glacier' | 'obsidian' | 'luxury'
 
 interface ThemeContextType {
     theme: Theme
@@ -18,7 +18,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const applyTheme = (newTheme: Theme) => {
         const root = document.documentElement
-        root.classList.remove('theme-dark', 'theme-slate', 'theme-purple')
+        root.classList.remove('theme-dark', 'theme-slate', 'theme-purple', 'theme-matrix', 'theme-sunset', 'theme-navy', 'theme-glacier', 'theme-obsidian', 'theme-luxury')
         if (newTheme !== 'dark') {
             root.classList.add(`theme-${newTheme}`)
         }

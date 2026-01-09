@@ -136,6 +136,17 @@ Watch agents collaborate in real-time with terminal output and git-like commit h
 - **Double-Click Reply**: Quickly thread your conversations by double-clicking any message.
 - **Real-Time Dashboard**: Monitor system load and agent activity live.
 
+### 🎨 Expanded Interface Themes (New)
+Customize your environment with professionally curated themes:
+- **Cyber Dark (OLED)**: Default high-contrast dark mode.
+- **Deep Ocean**: Calming blue/slate tones.
+- **Emerald Matrix**: Retro hacker green-on-black aesthetic.
+- **Sunset Amber**: Warm, high-contrast coffee & orange vibe.
+- **Midnight Navy**: Deep blue professional theme.
+- **Glacier Light**: Crisp, professional light mode.
+- **Obsidian (B&W)**: High-contrast pure black and white.
+- **Luxury Gold**: Premium white and gold elegance.
+
 ### 👤 Personal Identity Integration (New)
 Define your own role, title, and bio within the swarm. The agents will recognize you by name and role (e.g. "Lead Developer"), adapting their responses to your expertise level and preferences.
 

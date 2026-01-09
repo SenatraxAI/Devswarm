@@ -358,6 +358,12 @@ export default function SettingsPage() {
                                         <option value="dark" className="bg-slate-800">Cyber Dark (OLED)</option>
                                         <option value="slate" className="bg-slate-800">Deep Ocean</option>
                                         <option value="purple" className="bg-slate-800">Neon Purple</option>
+                                        <option value="matrix" className="bg-slate-800 text-green-400">Emerald Matrix</option>
+                                        <option value="sunset" className="bg-slate-800 text-orange-400">Sunset Amber</option>
+                                        <option value="navy" className="bg-slate-800 text-blue-400">Midnight Navy</option>
+                                        <option value="glacier" className="bg-slate-800 text-sky-300">Glacier Light</option>
+                                        <option value="obsidian" className="bg-black text-white border-b border-white">Obsidian (B&W)</option>
+                                        <option value="luxury" className="bg-slate-800 text-amber-400">Luxury Gold</option>
                                     </select>
                                 </div>
                             </div>
