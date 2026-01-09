@@ -131,6 +131,7 @@ Watch agents collaborate in real-time with terminal output and git-like commit h
 30+ tools including filesystem operations, GitHub integration, testing, security scanning
 
 ### ⚡ Smart Chat Interface (New)
+- **Multimodal Support**: Upload images, files, or use voice input to interact with agents.
 - **Fast Mode / Debate Mode**: Toggle between quick answers and deep multi-agent reasoning.
 - **Silent Tools**: Agents execute tools efficiently without cluttering the chat history.
 - **Double-Click Reply**: Quickly thread your conversations by double-clicking any message.
@@ -139,10 +140,9 @@ Watch agents collaborate in real-time with terminal output and git-like commit h
 ### 🎨 Expanded Interface Themes (New)
 Customize your environment with professionally curated themes:
 - **Cyber Dark (OLED)**: Default high-contrast dark mode.
-- **Deep Ocean**: Calming blue/slate tones.
+- **Neon Purple**: Vibrant cyberpunk aesthetic.
 - **Emerald Matrix**: Retro hacker green-on-black aesthetic.
 - **Sunset Amber**: Warm, high-contrast coffee & orange vibe.
-- **Midnight Navy**: Deep blue professional theme.
 - **Glacier Light**: Crisp, professional light mode.
 - **Obsidian (B&W)**: High-contrast pure black and white.
 - **Luxury Gold**: Premium white and gold elegance.
@@ -210,4 +210,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Status**: Phase 5/6 - Real-time Dashboard, Debate Mode & Settings Persistence ✅ COMPLETE
+**Status**: Phase 5/6 - Multimodal Chat & Theme Cleanup ✅ COMPLETE

@@ -44,10 +44,13 @@ interface ReplyContext {
     message: string;
 }
 
+import { ChatInput } from '@/components/ChatInput';
+
+// ... (existing imports)
+
 export function Workspace({ projectId, activeContext, setActiveContext, markAsRead }: WorkspaceProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('code');
     const [activeFile, setActiveFile] = useState<string | null>(null);
-    const [inputValue, setInputValue] = useState('');
     const [replyingTo, setReplyingTo] = useState<ReplyContext | null>(null);
     const [chatMode, setChatMode] = useState<'fast' | 'debate'>('fast');
     const { messages, isConnected, sendMessage, terminalOutput } = useWebSocket(undefined, projectId);
@@ -71,84 +74,45 @@ export function Workspace({ projectId, activeContext, setActiveContext, markAsRe
         { name: 'Oliver Hansen', role: 'Coordinator', id: 'oliver' },
     ];
 
-    const GROUP_LIST = [
-        { name: 'Team', role: 'Group', id: 'team' },
-        { name: 'All', role: 'Group', id: 'all' },
-    ];
-
-    const ALL_SUGGESTIONS = [...AGENTS_LIST, ...GROUP_LIST];
-
-    // Autocomplete State
-    const [showMentions, setShowMentions] = useState(false);
-    const [mentionQuery, setMentionQuery] = useState('');
-    const [mentionIndex, setMentionIndex] = useState(0);
-    const [filteredSuggestions, setFilteredSuggestions] = useState(ALL_SUGGESTIONS);
-
-    // Update suggestions when mention query changes
-    useEffect(() => {
-        setFilteredSuggestions(ALL_SUGGESTIONS.filter(s =>
-            s.name.toLowerCase().includes(mentionQuery.toLowerCase()) ||
-            s.role.toLowerCase().includes(mentionQuery.toLowerCase())
-        ));
-    }, [mentionQuery]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        const lastWord = value.split(' ').pop() || '';
-        setInputValue(value);
-        if (lastWord.startsWith('@')) {
-            setShowMentions(true);
-            setMentionQuery(lastWord.slice(1));
-            setMentionIndex(0);
-        } else {
-            setShowMentions(false);
-        }
-    };
-
-    const selectMention = (suggestion: typeof ALL_SUGGESTIONS[0]) => {
-        const words = inputValue.split(' ');
-        words.pop();
-        const newValue = [...words, `@${suggestion.name} `].join(' ');
-        setInputValue(newValue);
-        setShowMentions(false);
-    }
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (showMentions) {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                setMentionIndex(prev => (prev + 1) % filteredSuggestions.length);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                setMentionIndex(prev => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
-            } else if (e.key === 'Enter' || e.key === 'Tab') {
-                e.preventDefault();
-                if (filteredSuggestions[mentionIndex]) {
-                    selectMention(filteredSuggestions[mentionIndex]);
-                }
-            } else if (e.key === 'Escape') {
-                setShowMentions(false);
-            }
-        } else if (e.key === 'Enter') {
-            handleSendMessage();
-        }
-    };
-
-    const handleSendMessage = () => {
-        if (!inputValue.trim()) return;
+    const handleSendMessage = async (text: string, files?: File[]) => {
+        if (!text.trim() && (!files || files.length === 0)) return;
         const isDM = activeContext !== 'general';
         const branchName = isDM ? `dm/${activeContext.replace('dm-', '').replace(' ', '_').toLowerCase()}` : 'main';
         const threadId = isDM ? activeContext : undefined;
 
-        let finalMessage = inputValue;
+        let finalMessage = text;
         if (replyingTo) {
-            finalMessage = `> [Replying to @${replyingTo.agent}]: "${replyingTo.message.substring(0, 100)}${replyingTo.message.length > 100 ? '...' : ''}"\n\n${inputValue}`;
+            finalMessage = `> [Replying to @${replyingTo.agent}]: "${replyingTo.message.substring(0, 100)}${replyingTo.message.length > 100 ? '...' : ''}"\n\n${text}`;
+        }
+
+        // Process attachments if any
+        let attachments = [];
+        if (files && files.length > 0) {
+            // Simple file metadata for now, in a real app we'd upload to S3/Blob and send URL
+            // Or send Base64 if small. For MVP, we'll send a placeholder notification or Base64.
+            // Let's assume the backend handles 'attachments' or we append to message.
+            for (const file of files) {
+                // Convert to Base64 (simplified for MVP)
+                const reader = new FileReader();
+                const base64Promise = new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target?.result);
+                    reader.readAsDataURL(file);
+                });
+                const base64 = await base64Promise;
+                attachments.push({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: base64
+                });
+            }
         }
 
         sendMessage({
             type: isDM ? 'direct_message' : 'user_message',
             recipient: isDM ? activeContext.replace('dm-', '') : undefined,
             message: finalMessage,
+            attachments: attachments.length > 0 ? attachments : undefined,
             project_id: projectId,
             branch_name: branchName,
             thread_id: threadId,
@@ -156,7 +120,6 @@ export function Workspace({ projectId, activeContext, setActiveContext, markAsRe
             timestamp: Date.now() / 1000
         });
 
-        setInputValue('');
         setReplyingTo(null);
     };
 
@@ -238,93 +201,41 @@ export function Workspace({ projectId, activeContext, setActiveContext, markAsRe
                                                 : "bg-surface-light border-border/50 text-text rounded-tl-none hover:bg-surface"
                                         )}>
                                             {msg.message}
+                                            {msg.attachments && msg.attachments.length > 0 && (
+                                                <div className="mt-2 space-y-1">
+                                                    {msg.attachments.map((att: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center gap-2 text-xs bg-black/20 p-1 rounded">
+                                                            <span>📎 {att.name}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))
                         )}
                     </div>
                     {/* Chat Input Area */}
-                    <div className="p-4 border-t border-border/50 bg-background/50">
+                    <div className="w-full flex flex-col items-center">
                         {replyingTo && (
-                            <div className="flex items-center justify-between text-[10px] text-primary bg-primary/5 px-2 py-1.5 rounded-t-lg border-t border-x border-primary/20">
-                                <span className="truncate flex items-center gap-2">
-                                    <CornerDownRight className="w-3 h-3" />
-                                    Replying to <strong>{replyingTo.agent}</strong>
-                                </span>
-                                <button onClick={() => setReplyingTo(null)} className="p-1">
-                                    <X className="w-3 h-3" />
-                                </button>
+                            <div className="w-full px-2 mt-1">
+                                <div className="flex items-center justify-between text-[9px] text-[var(--accent-primary)] bg-[var(--bg-panel)] border border-[var(--bg-element)] px-2 py-1 rounded-t-xl border-b-0">
+                                    <span className="truncate flex items-center gap-1.5 font-bold tracking-tighter">
+                                        <CornerDownRight className="w-3 h-3" />
+                                        REPLYING TO {replyingTo.agent.toUpperCase()}
+                                    </span>
+                                    <button onClick={() => setReplyingTo(null)} className="p-0.5 hover:text-red-500 transition-colors">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
                         )}
-                        <div className="relative group">
-                            {showMentions && filteredSuggestions.length > 0 && (
-                                <div className="absolute bottom-full left-0 w-full bg-surface border border-border rounded-t-xl shadow-2xl z-50 overflow-hidden mb-2">
-                                    <div className="max-h-48 overflow-y-auto">
-                                        {filteredSuggestions.map((suggestion, idx) => (
-                                            <div
-                                                key={suggestion.id}
-                                                onClick={() => selectMention(suggestion)}
-                                                className={cn(
-                                                    "px-4 py-2 cursor-pointer transition-all",
-                                                    idx === mentionIndex ? "bg-primary text-white" : "hover:bg-surface-light"
-                                                )}
-                                            >
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-medium">{suggestion.name}</span>
-                                                    <span className={cn("text-[10px] uppercase", idx === mentionIndex ? "text-white/70" : "text-text-muted")}>
-                                                        {suggestion.role}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-2 bg-background border border-border rounded-xl p-1 shadow-inner group-focus-within:border-primary/50 transition-all">
-                                {/* Mode Toggle */}
-                                <div className="flex bg-surface rounded-lg p-0.5 border border-border/50">
-                                    <button
-                                        onClick={() => setChatMode('fast')}
-                                        className={cn(
-                                            "p-1.5 rounded-md transition-all",
-                                            chatMode === 'fast' ? "bg-primary/20 text-primary shadow-sm" : "text-text-muted hover:text-text hover:bg-surface-light"
-                                        )}
-                                        title="Fast Mode: Quick single-agent actions"
-                                    >
-                                        <Zap className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                        onClick={() => setChatMode('debate')}
-                                        className={cn(
-                                            "p-1.5 rounded-md transition-all",
-                                            chatMode === 'debate' ? "bg-purple-500/20 text-purple-400 shadow-sm" : "text-text-muted hover:text-text hover:bg-surface-light"
-                                        )}
-                                        title="Debate Mode: Deep multi-agent discussion"
-                                    >
-                                        <BrainCircuit className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                                <div className="w-[1px] h-6 bg-border/50 mx-1" />
-                                <input
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={handleInputChange}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder={chatMode === 'fast' ? "Quick command..." : "Ask a deep question..."}
-                                    className="flex-1 bg-transparent px-2 py-2 text-sm focus:outline-none placeholder:text-text-muted/50"
-                                />
-                                <button
-                                    onClick={handleSendMessage}
-                                    disabled={!inputValue.trim()}
-                                    className={cn(
-                                        "p-2 text-white rounded-lg disabled:opacity-30 transition-all shadow-lg",
-                                        chatMode === 'fast' ? "bg-primary shadow-primary/20" : "bg-purple-600 shadow-purple-600/20"
-                                    )}
-                                >
-                                    <CornerDownRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
+                        <ChatInput
+                            onSendMessage={handleSendMessage}
+                            disabled={!isConnected}
+                            mode={chatMode}
+                            onModeChange={setChatMode}
+                        />
                     </div>
                 </div>
             }

@@ -194,27 +194,27 @@ export default function SettingsPage() {
 
     if (loading && !isRefreshing) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-                <div className="text-xl text-white">Loading settings...</div>
+            <div className="flex items-center justify-center min-h-screen bg-[var(--bg-canvas)]">
+                <div className="text-xl text-[var(--text-primary)]">Loading settings...</div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+        <div className="min-h-screen bg-[var(--bg-canvas)] p-8">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-purple-500/20 rounded-lg">
-                            <Settings className="w-8 h-8 text-purple-400" />
+                        <div className="p-2 bg-[var(--accent-primary)]/20 rounded-lg">
+                            <Settings className="w-8 h-8 text-[var(--accent-primary)]" />
                         </div>
-                        <h1 className="text-3xl font-black text-white tracking-tight">System Settings</h1>
+                        <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tight">System Settings</h1>
                     </div>
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => loadSettings(true)}
-                            className={`p-3 rounded-xl bg-slate-800 border border-purple-500/20 hover:border-purple-500/50 transition-all text-purple-400 hover:text-purple-300 ${isRefreshing ? 'opacity-50 pointer-events-none' : ''}`}
+                            className={`p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--bg-element)] hover:border-[var(--accent-primary)]/50 transition-all text-[var(--accent-primary)] hover:text-[var(--accent-primary)]/80 ${isRefreshing ? 'opacity-50 pointer-events-none' : ''}`}
                             title="Refresh Settings"
                         >
                             <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -223,19 +223,19 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Profile Section */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-blue-500/20 overflow-hidden mb-6">
+                <div className="bg-[var(--bg-panel)] backdrop-blur-sm rounded-xl border border-[var(--bg-element)] overflow-hidden mb-6">
                     <button
                         onClick={() => toggleSection('profile')}
-                        className="w-full flex items-center justify-between p-6 hover:bg-slate-700/30 transition-colors"
+                        className="w-full flex items-center justify-between p-6 hover:bg-[var(--bg-elevated)]/30 transition-colors"
                     >
                         <div className="flex items-center gap-2">
-                            <User className={`w-5 h-5 transition-colors ${expandedSections.profile ? 'text-blue-400' : 'text-gray-500'}`} />
-                            <h2 className="text-xl font-semibold text-white">Personal Identity</h2>
+                            <User className={`w-5 h-5 transition-colors ${expandedSections.profile ? 'text-[var(--accent-primary)]' : 'text-gray-500'}`} />
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Personal Identity</h2>
                         </div>
                         {isSavingProfile ? (
-                            <span className="text-xs text-blue-400 animate-pulse font-bold uppercase">Saving...</span>
+                            <span className="text-xs text-[var(--accent-primary)] animate-pulse font-bold uppercase">Saving...</span>
                         ) : (
-                            <span className="text-xs text-blue-400 font-black tracking-[0.2em] uppercase">Verified Identity</span>
+                            <span className="text-xs text-[var(--accent-primary)] font-black tracking-[0.2em] uppercase">Verified Identity</span>
                         )}
                     </button>
 
@@ -256,7 +256,7 @@ export default function SettingsPage() {
                                             value={profile.name}
                                             onChange={e => setProfile({ ...profile, name: e.target.value })}
                                             onBlur={() => saveProfile()}
-                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all placeholder:text-gray-700 font-medium"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -265,10 +265,11 @@ export default function SettingsPage() {
                                         </label>
                                         <input
                                             type="text"
+
                                             value={profile.role}
                                             onChange={e => setProfile({ ...profile, role: e.target.value })}
                                             onBlur={() => saveProfile()}
-                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all placeholder:text-gray-700 font-medium"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -280,7 +281,7 @@ export default function SettingsPage() {
                                             value={profile.company || ''}
                                             onChange={e => setProfile({ ...profile, company: e.target.value })}
                                             onBlur={() => saveProfile()}
-                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all placeholder:text-gray-700 font-medium"
                                         />
                                     </div>
                                 </div>
@@ -294,19 +295,19 @@ export default function SettingsPage() {
                                             value={profile.bio || ''}
                                             onChange={e => setProfile({ ...profile, bio: e.target.value })}
                                             onBlur={() => saveProfile()}
-                                            className="w-full bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all h-[155px] resize-none font-medium"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all h-[155px] resize-none font-medium"
                                             placeholder="e.g. Senior Software Architect focused on high-performance backends..."
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-white/5">
+                            <div className="pt-4 border-t border-[var(--bg-element)] grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="flex items-center justify-between p-4 bg-[var(--bg-canvas)] rounded-xl border border-[var(--bg-element)]">
                                     <div className="flex items-center gap-3">
                                         <CheckCircle className={`w-5 h-5 ${profile.preferences.natural_grammar ? 'text-green-400' : 'text-gray-600'}`} />
                                         <div>
-                                            <p className="text-sm font-bold text-white">Natural Grammar</p>
+                                            <p className="text-sm font-bold text-[var(--text-primary)]">Natural Grammar</p>
                                             <p className="text-[10px] text-gray-500 font-medium">Contractions & casual tone</p>
                                         </div>
                                     </div>
@@ -325,7 +326,7 @@ export default function SettingsPage() {
                                     </button>
                                 </div>
 
-                                <div className="p-4 bg-slate-900 rounded-xl border border-white/5">
+                                <div className="p-4 bg-[var(--bg-canvas)] rounded-xl border border-[var(--bg-element)]">
                                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Agent Style</p>
                                     <select
                                         value={profile.preferences.agent_style}
@@ -334,15 +335,15 @@ export default function SettingsPage() {
                                             setProfile(newProfile);
                                             saveProfile(newProfile);
                                         }}
-                                        className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
+                                        className="w-full bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none cursor-pointer"
                                     >
-                                        <option value="professional_casual" className="bg-slate-800">Professional Casual</option>
-                                        <option value="strict_formal" className="bg-slate-800">Strict Formal</option>
-                                        <option value="energetic" className="bg-slate-800">Energetic / Hacker</option>
+                                        <option value="professional_casual" className="bg-[var(--bg-panel)]">Professional Casual</option>
+                                        <option value="strict_formal" className="bg-[var(--bg-panel)]">Strict Formal</option>
+                                        <option value="energetic" className="bg-[var(--bg-panel)]">Energetic / Hacker</option>
                                     </select>
                                 </div>
 
-                                <div className="p-4 bg-slate-900 rounded-xl border border-white/5">
+                                <div className="p-4 bg-[var(--bg-canvas)] rounded-xl border border-[var(--bg-element)]">
                                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Interface Theme</p>
                                     <select
                                         value={profile.preferences.theme}
@@ -353,17 +354,15 @@ export default function SettingsPage() {
                                             setGlobalTheme(newTheme);
                                             saveProfile(newProfile);
                                         }}
-                                        className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
+                                        className="w-full bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none cursor-pointer"
                                     >
-                                        <option value="dark" className="bg-slate-800">Cyber Dark (OLED)</option>
-                                        <option value="slate" className="bg-slate-800">Deep Ocean</option>
-                                        <option value="purple" className="bg-slate-800">Neon Purple</option>
-                                        <option value="matrix" className="bg-slate-800 text-green-400">Emerald Matrix</option>
-                                        <option value="sunset" className="bg-slate-800 text-orange-400">Sunset Amber</option>
-                                        <option value="navy" className="bg-slate-800 text-blue-400">Midnight Navy</option>
-                                        <option value="glacier" className="bg-slate-800 text-sky-300">Glacier Light</option>
+                                        <option value="dark" className="bg-[var(--bg-panel)]">Cyber Dark (OLED)</option>
+                                        <option value="purple" className="bg-[var(--bg-panel)]">Neon Purple</option>
+                                        <option value="matrix" className="bg-[var(--bg-panel)] text-green-400">Emerald Matrix</option>
+                                        <option value="sunset" className="bg-[var(--bg-panel)] text-orange-400">Sunset Amber</option>
+                                        <option value="glacier" className="bg-[var(--bg-panel)] text-sky-300">Glacier Light</option>
                                         <option value="obsidian" className="bg-black text-white border-b border-white">Obsidian (B&W)</option>
-                                        <option value="luxury" className="bg-slate-800 text-amber-400">Luxury Gold</option>
+                                        <option value="luxury" className="bg-[var(--bg-panel)] text-amber-400">Luxury Gold</option>
                                     </select>
                                 </div>
                             </div>
@@ -372,16 +371,16 @@ export default function SettingsPage() {
                 </div>
 
                 {/* MCP Servers Section */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 overflow-hidden mb-6">
+                <div className="bg-[var(--bg-panel)] backdrop-blur-sm rounded-xl border border-[var(--bg-element)] overflow-hidden mb-6">
                     <button
                         onClick={() => toggleSection('mcp')}
-                        className="w-full flex items-center justify-between p-6 hover:bg-slate-700/30 transition-colors"
+                        className="w-full flex items-center justify-between p-6 hover:bg-[var(--bg-elevated)]/30 transition-colors"
                     >
                         <div className="flex items-center gap-2">
-                            <Server className={`w-5 h-5 transition-colors ${expandedSections.mcp ? 'text-purple-400' : 'text-gray-500'}`} />
-                            <h2 className="text-xl font-semibold text-white">MCP Servers</h2>
+                            <Server className={`w-5 h-5 transition-colors ${expandedSections.mcp ? 'text-[var(--accent-primary)]' : 'text-gray-500'}`} />
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)]">MCP Servers</h2>
                         </div>
-                        <span className="text-xs text-purple-400 font-black tracking-[0.2em] uppercase">
+                        <span className="text-xs text-[var(--accent-primary)] font-black tracking-[0.2em] uppercase">
                             {Object.keys(mcpServers).length} Connected
                         </span>
                     </button>
@@ -392,7 +391,7 @@ export default function SettingsPage() {
                                 <p className="text-sm text-gray-400 font-medium font-outfit">Manage your Model Context Protocol servers</p>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setIsAddModalOpen(true); }}
-                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-purple-900/40"
+                                    className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-purple-900/40"
                                 >
                                     <Plus className="w-4 h-4" />
                                     <span>Add Server</span>
@@ -400,12 +399,12 @@ export default function SettingsPage() {
                             </div>
 
                             {Object.keys(mcpServers).length === 0 && (
-                                <div className="text-center py-12 bg-slate-900/30 rounded-xl border border-dashed border-slate-700">
+                                <div className="text-center py-12 bg-[var(--bg-canvas)]/30 rounded-xl border border-dashed border-[var(--bg-element)]">
                                     <Server className="w-12 h-12 text-slate-700 mx-auto mb-3" />
                                     <div className="text-slate-500 font-medium">No MCP servers configured</div>
                                     <button
                                         onClick={() => setIsAddModalOpen(true)}
-                                        className="mt-4 text-purple-400 hover:text-purple-300 text-sm font-bold"
+                                        className="mt-4 text-[var(--accent-primary)] hover:text-[var(--accent-primary)]/80 text-sm font-bold"
                                     >
                                         Configure first server
                                     </button>
@@ -414,7 +413,7 @@ export default function SettingsPage() {
                             {Object.entries(mcpServers).map(([name, server]) => (
                                 <div
                                     key={name}
-                                    className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between hover:bg-slate-700/70 transition-colors"
+                                    className="bg-[var(--bg-canvas)]/50 rounded-lg p-4 flex items-center justify-between hover:bg-[var(--accent-primary)]/5 transition-colors"
                                 >
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3">
@@ -422,8 +421,8 @@ export default function SettingsPage() {
                                                 className={`w-3 h-3 rounded-full ${server.enabled ? 'bg-green-400' : 'bg-gray-500'
                                                     }`}
                                             />
-                                            <h3 className="text-white font-medium">{name}</h3>
-                                            <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
+                                            <h3 className="text-[var(--text-primary)] font-medium">{name}</h3>
+                                            <span className="text-xs px-2 py-1 bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] rounded">
                                                 {server.type}
                                             </span>
                                         </div>
@@ -455,14 +454,14 @@ export default function SettingsPage() {
                 </div>
 
                 {/* API Keys Section */}
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-purple-500/20 overflow-hidden">
+                <div className="bg-[var(--bg-panel)] backdrop-blur-sm rounded-xl border border-[var(--bg-element)] overflow-hidden">
                     <button
                         onClick={() => toggleSection('api')}
-                        className="w-full flex items-center justify-between p-6 hover:bg-slate-700/30 transition-colors"
+                        className="w-full flex items-center justify-between p-6 hover:bg-[var(--bg-elevated)]/30 transition-colors"
                     >
                         <div className="flex items-center gap-2">
-                            <Key className={`w-5 h-5 transition-colors ${expandedSections.api ? 'text-purple-400' : 'text-gray-500'}`} />
-                            <h2 className="text-xl font-semibold text-white">Security & API Keys</h2>
+                            <Key className={`w-5 h-5 transition-colors ${expandedSections.api ? 'text-[var(--accent-primary)]' : 'text-gray-500'}`} />
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Security & API Keys</h2>
                         </div>
                         <span className="text-xs text-gray-500 font-mono tracking-widest uppercase">
                             {Object.keys(apiKeys).length} Keys
@@ -472,10 +471,10 @@ export default function SettingsPage() {
                     {expandedSections.api && (
                         <div className="p-6 pt-0 space-y-4">
                             {Object.entries(apiKeys).map(([keyName, status]) => (
-                                <div key={keyName} className="bg-slate-700/50 rounded-lg p-4">
+                                <div key={keyName} className="bg-[var(--bg-canvas)]/50 rounded-lg p-4">
                                     <div className="flex items-center justify-between mb-2">
                                         <div>
-                                            <h3 className="text-white font-medium">{keyName}</h3>
+                                            <h3 className="text-[var(--text-primary)] font-medium">{keyName}</h3>
                                             <p className="text-sm text-gray-400">{status.description}</p>
                                         </div>
                                         <div
@@ -491,7 +490,7 @@ export default function SettingsPage() {
                                     <input
                                         type="password"
                                         placeholder={`Enter ${keyName}...`}
-                                        className="w-full px-4 py-2 bg-slate-600/50 text-white rounded-lg border border-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                        className="w-full px-4 py-2 bg-[var(--bg-elevated)] text-[var(--text-secondary)] rounded-lg border border-[var(--bg-element)] focus:border-[var(--accent-primary)] focus:outline-none"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 updateAPIKey(keyName, e.currentTarget.value)
@@ -507,11 +506,11 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Info Banner */}
-                <div className="mt-12 p-6 bg-blue-500/5 rounded-xl border border-blue-500/20 flex gap-4">
-                    <Shield className="w-6 h-6 text-blue-400 shrink-0" />
+                <div className="mt-12 p-6 bg-[var(--accent-primary)]/5 rounded-xl border border-[var(--accent-primary)]/20 flex gap-4">
+                    <Shield className="w-6 h-6 text-[var(--accent-primary)] shrink-0" />
                     <div className="space-y-2">
-                        <h4 className="text-sm font-black text-blue-400 tracking-wider font-outfit uppercase">Configuration Notes:</h4>
-                        <ul className="text-xs text-blue-300/60 space-y-1 ml-4 list-disc font-medium">
+                        <h4 className="text-sm font-black text-[var(--accent-primary)] tracking-wider font-outfit uppercase">Configuration Notes:</h4>
+                        <ul className="text-xs text-[var(--accent-primary)]/60 space-y-1 ml-4 list-disc font-medium">
                             <li>Toggling servers requires a backend restart to take effect</li>
                             <li>API keys are locally stored in backend/.env file (standard for security)</li>
                             <li>System works without keys (20 of 22 tools functional)</li>
@@ -522,10 +521,10 @@ export default function SettingsPage() {
                 {/* Add Server Modal */}
                 {isAddModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <div className="bg-slate-900 border border-purple-500/30 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-purple-500/10">
-                            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-slate-800/50">
-                                <h3 className="text-xl font-black text-white flex items-center gap-2">
-                                    <Plus className="w-5 h-5 text-purple-400" />
+                        <div className="bg-[var(--bg-panel)] border border-[var(--bg-element)] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-purple-500/10">
+                            <div className="p-6 border-b border-[var(--bg-element)] flex items-center justify-between bg-[var(--bg-elevated)]/50">
+                                <h3 className="text-xl font-black text-[var(--text-primary)] flex items-center gap-2">
+                                    <Plus className="w-5 h-5 text-[var(--accent-primary)]" />
                                     Add MCP Server
                                 </h3>
                                 <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
@@ -540,7 +539,7 @@ export default function SettingsPage() {
                                         <input
                                             type="text"
                                             placeholder="e.g. npx -y @modelcontextprotocol/server-filesystem"
-                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all placeholder:text-gray-700 font-medium"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all placeholder:text-gray-700 font-medium"
                                             value={newServer.command}
                                             onChange={e => setNewServer({ ...newServer, command: e.target.value })}
                                         />
@@ -551,7 +550,7 @@ export default function SettingsPage() {
                                         <input
                                             type="text"
                                             placeholder="e.g. C:/Users/Docs"
-                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all placeholder:text-gray-700 font-mono text-sm"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all placeholder:text-gray-700 font-mono text-sm"
                                             value={newServer.args?.join(' ')}
                                             onChange={e => setNewServer({ ...newServer, args: e.target.value.split(' ') })}
                                         />
@@ -561,7 +560,7 @@ export default function SettingsPage() {
                                         <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Description</label>
                                         <textarea
                                             placeholder="What does this server do?"
-                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all h-20 resize-none placeholder:text-gray-700 font-medium text-sm"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all h-20 resize-none placeholder:text-gray-700 font-medium text-sm"
                                             value={newServer.description}
                                             onChange={e => setNewServer({ ...newServer, description: e.target.value })}
                                         />
@@ -571,7 +570,7 @@ export default function SettingsPage() {
                                         <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Advanced Config (JSON)</label>
                                         <textarea
                                             placeholder='e.g. { "api_key": "${MY_VAR}" }'
-                                            className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all h-24 resize-none placeholder:text-gray-700 font-mono text-xs"
+                                            className="w-full bg-[var(--bg-canvas)] border border-[var(--bg-element)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-primary)] outline-none transition-all h-24 resize-none placeholder:text-gray-700 font-mono text-xs"
                                             value={rawConfig}
                                             onChange={e => setRawConfig(e.target.value)}
                                         />
@@ -586,7 +585,7 @@ export default function SettingsPage() {
                                 <button
                                     onClick={saveNewServer}
                                     disabled={!newServer.command}
-                                    className="w-full py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:grayscale text-white font-black rounded-xl transition-all shadow-lg shadow-purple-900/40"
+                                    className="w-full py-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/80 disabled:opacity-50 disabled:grayscale text-white font-black rounded-xl transition-all shadow-lg shadow-purple-900/40"
                                 >
                                     Confirm Configuration
                                 </button>

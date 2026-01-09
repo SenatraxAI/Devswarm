@@ -136,21 +136,7 @@
     --color-accent-primary: var(--accent-primary);
   }
 
-  /* Midnight Navy Theme (Replacing risky Light Mode) */
-  .theme-navy {
-    --bg-canvas: #020617;
-    --bg-panel: #0f172a;
-    --bg-element: #1e293b;
-    --bg-elevated: #334155;
-    --text-primary: #f8fafc;
-    --accent-primary: #3b82f6;
 
-    /* Legacy aliases sync */
-    --color-bg: var(--bg-canvas);
-    --color-surface: var(--bg-panel);
-    --color-surface-light: var(--bg-element);
-    --color-accent-primary: var(--accent-primary);
-  }
 
   /* Glacier Light Theme (Professional) */
   .theme-glacier {

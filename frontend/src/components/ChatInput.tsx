@@ -5,10 +5,24 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import {
+    Plus,
+    Mic,
+    SendHorizontal,
+    X,
+    Zap,
+    BrainCircuit,
+    Wrench,
+    ChevronDown,
+    Loader2
+} from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface ChatInputProps {
     onSendMessage: (message: string, files?: File[]) => void;
     disabled?: boolean;
+    mode: 'fast' | 'debate';
+    onModeChange: (mode: 'fast' | 'debate') => void;
 }
 
 const VALID_AGENTS = [
@@ -22,7 +36,7 @@ const VALID_AGENTS = [
     'Oliver Hansen'
 ];
 
-export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
+export function ChatInput({ onSendMessage, disabled = false, mode, onModeChange }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [showAutocomplete, setShowAutocomplete] = useState(false);
     const [autocompleteOptions, setAutocompleteOptions] = useState<string[]>([]);
@@ -31,6 +45,7 @@ export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
     const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
     const [isRecording, setIsRecording] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [showModeDropdown, setShowModeDropdown] = useState(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +138,6 @@ export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
             setIsRecording(true);
         } catch (err) {
             console.error('Failed to start recording:', err);
-            alert('Microphone access denied or not available');
         }
     };
 
@@ -140,121 +154,169 @@ export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
             onSendMessage(message, attachedFiles);
             setMessage('');
             setAttachedFiles([]);
+            if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+            }
         }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setMessage(e.target.value);
         setCursorPosition(e.target.selectionStart);
-    };
 
-    const getFileIcon = (file: File) => {
-        if (file.type.startsWith('image/')) return '🖼️';
-        if (file.type.startsWith('video/')) return '🎥';
-        if (file.type.startsWith('audio/')) return '🎵';
-        return '📄';
+        // Auto-expand textarea
+        e.target.style.height = 'auto';
+        e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
     };
 
     return (
-        <div className="relative border-t border-gray-700 bg-gray-800/50 p-4">
+        <div className="relative w-full px-2 pb-2 pt-1 group">
             {/* Autocomplete dropdown */}
             {showAutocomplete && (
-                <div className="absolute bottom-full left-4 right-4 mb-2 max-h-48 overflow-y-auto rounded-lg border border-cyan-500/30 bg-gray-900 shadow-lg shadow-cyan-500/10">
+                <div className="absolute bottom-full left-2 right-2 mb-2 max-h-48 overflow-y-auto rounded-xl border border-[var(--bg-element)] bg-[var(--bg-panel)] shadow-2xl z-50">
                     {autocompleteOptions.map((agent, index) => (
                         <button
                             key={agent}
                             onClick={() => insertMention(agent)}
-                            className={`w-full px-4 py-2 text-left transition-colors ${index === selectedIndex
-                                    ? 'bg-cyan-500/20 text-cyan-400'
-                                    : 'text-gray-300 hover:bg-gray-800'
-                                }`}
+                            className={cn(
+                                "w-full px-3 py-2 text-left transition-colors flex items-center justify-between group/item",
+                                index === selectedIndex ? "bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"
+                            )}
                         >
-                            <span className="font-medium">@{agent}</span>
+                            <span className="text-sm font-semibold">@{agent}</span>
+                            <ChevronDown className="w-3 h-3 opacity-0 group-hover/item:opacity-50 -rotate-90" />
                         </button>
                     ))}
                 </div>
             )}
 
-            {/* Attached files preview */}
+            {/* Attached files preview (floating) */}
             {attachedFiles.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-2">
+                <div className="absolute bottom-full left-2 right-2 mb-2 flex flex-wrap gap-1.5 pointer-events-none">
                     {attachedFiles.map((file, index) => (
                         <div
                             key={index}
-                            className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm"
+                            className="flex items-center gap-1.5 rounded-lg border border-[var(--bg-element)] bg-[var(--bg-panel)]/90 backdrop-blur-md px-2 py-1 text-[10px] shadow-lg animate-in fade-in slide-in-from-bottom-1 pointer-events-auto"
                         >
-                            <span>{getFileIcon(file)}</span>
-                            <span className="max-w-[150px] truncate text-gray-300">{file.name}</span>
+                            <span className="text-xs">
+                                {file.type.startsWith('image/') ? '🖼️' : '📄'}
+                            </span>
+                            <span className="max-w-[80px] truncate text-[var(--text-primary)] font-medium">{file.name}</span>
                             <button
                                 onClick={() => removeFile(index)}
-                                className="text-red-400 hover:text-red-300"
+                                className="p-0.5 hover:bg-red-500/20 text-red-500 rounded transition-colors"
                             >
-                                ✕
+                                <X className="w-2.5 h-2.5" />
                             </button>
                         </div>
                     ))}
                 </div>
             )}
 
-            <div className="flex gap-2">
-                {/* File upload button */}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                />
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={disabled}
-                    className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-cyan-400 disabled:opacity-50"
-                    title="Attach files (images, videos, audio, documents)"
-                >
-                    📎
-                </button>
+            {/* Compact Pill Bar */}
+            <div className={cn(
+                "w-full flex items-center gap-1.5 p-1 bg-[var(--bg-panel)] border border-[var(--bg-element)] rounded-2xl shadow-lg transition-all duration-200 group-focus-within:border-[var(--accent-primary)]/40 group-focus-within:shadow-[0_0_20px_-5px_rgba(var(--accent-primary-rgb),0.1)]",
+                disabled && "opacity-50 grayscale"
+            )}>
+                {/* Actions Group (Left) */}
+                <div className="flex items-center gap-0.5 pl-0.5">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={disabled}
+                        className="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-all"
+                        title="Add context"
+                    >
+                        <Plus className="w-5 h-5" />
+                    </button>
+                </div>
 
-                {/* Voice recording button */}
-                <button
-                    onClick={isRecording ? stopRecording : startRecording}
-                    disabled={disabled}
-                    className={`rounded-lg border px-3 py-2 transition-colors disabled:opacity-50 ${isRecording
-                            ? 'border-red-500 bg-red-500/20 text-red-400 animate-pulse'
-                            : 'border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800 hover:text-cyan-400'
-                        }`}
-                    title={isRecording ? 'Stop recording' : 'Record voice message'}
-                >
-                    🎤
-                </button>
+                {/* Main Input Area Area */}
+                <div className="flex-1 min-w-0">
+                    <textarea
+                        ref={textareaRef}
+                        value={message}
+                        onChange={handleChange}
+                        onKeyDown={handleKeyDown}
+                        onClick={(e) => setCursorPosition(e.currentTarget.selectionStart)}
+                        placeholder={mode === 'fast' ? "Query swarm..." : "Start debate..."}
+                        disabled={disabled}
+                        rows={1}
+                        className="w-full bg-transparent px-1 py-1 text-[13px] leading-tight text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none resize-none overflow-hidden"
+                    />
+                </div>
 
-                <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                    onClick={(e) => setCursorPosition(e.currentTarget.selectionStart)}
-                    placeholder="Type a message... Use @name to mention agents"
-                    disabled={disabled}
-                    rows={3}
-                    className="flex-1 resize-none rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:opacity-50"
-                />
+                {/* Actions Group (Right) */}
+                <div className="flex items-center gap-0.5 pr-0.5">
+                    {/* Mode Toggle (Mini) */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowModeDropdown(!showModeDropdown)}
+                            className={cn(
+                                "flex items-center gap-1 px-1.5 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider transition-all",
+                                mode === 'fast' ? "text-amber-400 hover:bg-amber-400/5" : "text-purple-400 hover:bg-purple-400/5",
+                                showModeDropdown && "bg-[var(--bg-elevated)]"
+                            )}
+                        >
+                            {mode === 'fast' ? <Zap className="w-3.5 h-3.5" /> : <BrainCircuit className="w-3.5 h-3.5" />}
+                            <ChevronDown className={cn("w-2.5 h-2.5 transition-transform opacity-50", showModeDropdown && "rotate-180")} />
+                        </button>
 
-                <button
-                    onClick={handleSend}
-                    disabled={disabled || (!message.trim() && attachedFiles.length === 0)}
-                    className="self-end rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-2 font-medium text-white transition-all hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Send
-                </button>
-            </div>
+                        {showModeDropdown && (
+                            <div className="absolute bottom-full right-0 mb-2 w-32 bg-[var(--bg-panel)] border border-[var(--bg-element)] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in-95">
+                                <button
+                                    onClick={() => { onModeChange('fast'); setShowModeDropdown(false); }}
+                                    className={cn("w-full flex items-center gap-2 p-2 rounded-lg transition-colors", mode === 'fast' ? "bg-amber-400/10 text-amber-400" : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]")}
+                                >
+                                    <Zap className="w-3.5 h-3.5" />
+                                    <span className="text-[9px] font-bold uppercase">Fast</span>
+                                </button>
+                                <button
+                                    onClick={() => { onModeChange('debate'); setShowModeDropdown(false); }}
+                                    className={cn("w-full flex items-center gap-2 p-2 rounded-lg transition-colors", mode === 'debate' ? "bg-purple-500/10 text-purple-400" : "hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]")}
+                                >
+                                    <BrainCircuit className="w-3.5 h-3.5" />
+                                    <span className="text-[9px] font-bold uppercase">Debate</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
-            {/* Hints */}
-            <div className="mt-2 text-xs text-gray-500">
-                <span className="text-cyan-400">@</span> to mention •
-                <span className="text-cyan-400"> 📎</span> attach files •
-                <span className="text-cyan-400"> 🎤</span> record voice •
-                <span className="text-cyan-400"> Enter</span> to send
+                    {/* Mic */}
+                    <button
+                        onClick={isRecording ? stopRecording : startRecording}
+                        disabled={disabled}
+                        className={cn(
+                            "p-1.5 rounded-xl transition-all",
+                            isRecording
+                                ? "bg-red-500 text-white animate-pulse"
+                                : "text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-elevated)]"
+                        )}
+                    >
+                        <Mic className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Send */}
+                    <button
+                        onClick={handleSend}
+                        disabled={disabled || (!message.trim() && attachedFiles.length === 0)}
+                        className={cn(
+                            "p-2 rounded-xl transition-all",
+                            (message.trim() || attachedFiles.length > 0)
+                                ? "bg-[var(--accent-primary)] text-white shadow-md shadow-[var(--accent-primary)]/10"
+                                : "text-[var(--text-muted)] opacity-20 cursor-not-allowed"
+                        )}
+                    >
+                        <SendHorizontal className="w-4.5 h-4.5" />
+                    </button>
+                </div>
             </div>
         </div>
     );
